@@ -1,0 +1,359 @@
+import { useState, useMemo } from "react";
+import { X, Info, ShieldCheck, ChevronLeft } from "@/lib/icon-map";
+import type { ProductStock } from "@/lib/stock-types";
+import { toast } from "sonner";
+import { createReservation, getReservations, getUsers } from "@/lib/stock-api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useAuthStore } from "@/stores/auth-store";
+
+
+
+type CreateReservationPanelProps = {
+  product: ProductStock;
+  onClose: () => void;
+};
+
+
+export function CreateReservationPanel({ product, onClose }: CreateReservationPanelProps) {
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  
+  const { data: reservations = [] } = useQuery({
+    queryKey: ["all-reservations"],
+    queryFn: getReservations,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["all-users"],
+    queryFn: getUsers,
+  });
+
+  const comercialOptions = useMemo(() => {
+    const set = new Set<string>();
+    if (user?.name) {
+      set.add(user.name);
+    }
+    users.forEach((u) => {
+      if (u.name) set.add(u.name);
+    });
+    reservations.forEach((r) => {
+      if (r.name) set.add(r.name);
+    });
+    return Array.from(set).map((name) => ({ value: name, label: name }));
+  }, [users, reservations, user?.name]);
+
+  const encomendaOptions = useMemo(() => {
+    const set = new Set<string>();
+    reservations.forEach((r) => {
+      if (r.order) set.add(r.order);
+    });
+    return Array.from(set).map((order) => ({ value: order, label: order }));
+  }, [reservations]);
+
+  const [quantities, setQuantities] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {};
+    product.colors?.forEach((c) => {
+      initial[c.name] = 0;
+    });
+    if (product.colors?.length === 0) {
+      initial["default"] = 0;
+    }
+    return initial;
+  });
+
+  const [comercial, setComercial] = useState(() => user?.name || "");
+  const [encomenda, setEncomenda] = useState("—");
+  const [mensagem, setMensagem] = useState("");
+  const [orcamento, setOrcamento] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getAvailableForColor = (colorName: string) => {
+    if (colorName === "default") return product.quantity - product.reserved;
+    const colorVariants = product.variants?.filter((v) => v.color === colorName) || [];
+    if (colorVariants.length > 0) {
+      return colorVariants.reduce((sum, v) => sum + (v.quantity - v.reserved), 0);
+    }
+    return product.quantity - product.reserved;
+  };
+
+  const handleQuantityChange = (color: string, delta: number) => {
+    setQuantities((prev) => {
+      const current = prev[color] || 0;
+      const next = Math.max(0, current + delta);
+      const available = getAvailableForColor(color);
+      if (next > available) {
+        toast.error(`Apenas ${available} unidades disponíveis para a cor ${color}.`);
+        return prev;
+      }
+      return { ...prev, [color]: next };
+    });
+  };
+
+  const handleSave = async () => {
+    const totalQty = Object.values(quantities).reduce((a, b) => a + b, 0);
+    if (totalQty === 0) {
+      toast.error("Por favor, selecione pelo menos 1 unidade.");
+      return;
+    }
+
+    if (!comercial.trim()) {
+      toast.error("O campo Comercial é obrigatório.");
+      return;
+    }
+
+    setIsSubmitting(false);
+    const reservationPromises: Promise<unknown>[] = [];
+
+    try {
+      setIsSubmitting(true);
+      for (const [colorName, qty] of Object.entries(quantities)) {
+        if (qty > 0) {
+          const variant = product.variants?.find((v) => v.color === colorName);
+
+          const payload = {
+            name: comercial,
+            id_product: product.id,
+            quantity: qty,
+            color: colorName === "default" ? "" : colorName,
+            size: variant?.size || undefined,
+            message: mensagem || undefined,
+            order: (encomenda === "—" || !encomenda) ? undefined : encomenda,
+            proposal: orcamento ? 1 : 0,
+          };
+
+          reservationPromises.push(createReservation(payload));
+        }
+      }
+
+      await Promise.all(reservationPromises);
+      toast.success("Reserva criada com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["stock-products"] });
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao criar reserva. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderColorRows = () => {
+    if (product.colors && product.colors.length > 0) {
+      return product.colors.map((c) => {
+        const qty = quantities[c.name] || 0;
+        const available = getAvailableForColor(c.name);
+
+        return (
+          <div key={c.name} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0 dark:border-slate-800/40">
+            <div className="flex items-center">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {c.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-10">
+              <div className="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(c.name, -1)}
+                  className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-medium dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
+                >
+                  —
+                </button>
+                <span className="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(c.name, 1)}
+                  className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
+                >
+                  +
+                </button>
+              </div>
+              <span className="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
+                {available}
+              </span>
+            </div>
+          </div>
+        );
+      });
+    }
+
+    const qty = quantities["default"] || 0;
+    const available = getAvailableForColor("default");
+
+    return (
+      <div className="flex items-center justify-between py-2">
+        <div className="flex items-center">
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Geral</span>
+        </div>
+        <div className="flex items-center gap-10">
+          <div className="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+            <button
+              type="button"
+              onClick={() => handleQuantityChange("default", -1)}
+              className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
+            >
+              —
+            </button>
+            <span className="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleQuantityChange("default", 1)}
+              className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
+            >
+              +
+            </button>
+          </div>
+          <span className="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
+            {available}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex h-full w-full flex-col bg-white dark:bg-slate-900 animate-in fade-in duration-200">
+      {/* Header */}
+      <div className="flex items-start justify-between p-5 pb-3">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-[#8C9BAE] uppercase tracking-widest mb-0.5">
+            NOVA RESERVA
+          </span>
+          <h2 className="text-xl font-extrabold text-slate-850 dark:text-slate-100 leading-tight">
+            Criar Reserva
+          </h2>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex size-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-5 pb-24 flex flex-col gap-5">
+        {/* Section: Selecionar Quantidades */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+            SELECIONAR QUANTIDADES
+          </span>
+          
+          {/* Table Header */}
+          <div className="flex justify-between text-[10px] font-bold text-slate-400/90 tracking-wider pb-1.5 border-b border-slate-100 dark:border-slate-800/40">
+            <span>Cor</span>
+            <div className="flex gap-12 pr-2">
+              <span>Quantidade</span>
+              <span>Disponível</span>
+            </div>
+          </div>
+
+          {/* Rows */}
+          <div className="flex flex-col max-h-[160px] overflow-y-auto pr-1">
+            {renderColorRows()}
+          </div>
+        </div>
+
+        <div className="border-t border-slate-100/80 dark:border-slate-800/40" />
+
+        {/* Form Fields */}
+        <div className="flex flex-col gap-4">
+          {/* Comercial */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+              COMERCIAL
+            </label>
+            <SearchableSelect
+              value={comercial}
+              onValueChange={setComercial}
+              options={comercialOptions}
+              placeholder="Selecionar comercial"
+              searchPlaceholder="Pesquisar comercial..."
+              emptyMessage="Nenhum comercial encontrado. Digite para adicionar."
+              allowCustom={true}
+            />
+          </div>
+
+          {/* Nº Encomenda */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+              Nº ENCOMENDA
+            </label>
+            <SearchableSelect
+              value={encomenda}
+              onValueChange={setEncomenda}
+              options={encomendaOptions}
+              placeholder="Selecionar encomenda"
+              searchPlaceholder="Pesquisar encomenda..."
+              emptyMessage="Nenhuma encomenda encontrada. Digite para adicionar."
+              allowCustom={true}
+            />
+          </div>
+
+          {/* Mensagem */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+              MENSAGEM
+            </label>
+            <textarea
+              value={mensagem}
+              onChange={(e) => setMensagem(e.target.value)}
+              placeholder="Adicionar mensagem..."
+              className="h-22 w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-300 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all resize-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-700"
+            />
+          </div>
+
+          {/* Orçamento Checkbox */}
+          <div className="flex items-center gap-2.5 py-1">
+            <input
+              type="checkbox"
+              id="orcamento"
+              checked={orcamento}
+              onChange={(e) => setOrcamento(e.target.checked)}
+              className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+            />
+            <label
+              htmlFor="orcamento"
+              className="text-sm font-semibold text-slate-750 dark:text-slate-200 cursor-pointer select-none"
+            >
+              Orçamento
+            </label>
+          </div>
+        </div>
+
+        {/* Helper note */}
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400/90 dark:text-slate-500">
+          <Info className="size-4 shrink-0 text-slate-400/80 dark:text-slate-650" />
+          <span>As reservas são válidas por 5 dias.</span>
+        </div>
+      </div>
+
+      {/* Footer Buttons */}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 flex items-center gap-3 dark:border-slate-800 dark:bg-slate-900">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-750 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
+          <ChevronLeft className="size-4" />
+          <span>Voltar</span>
+        </button>
+        
+        <button
+          type="button"
+          disabled={isSubmitting}
+          onClick={handleSave}
+          className="flex-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-md transition-colors"
+        >
+          <ShieldCheck className="size-4" />
+          <span>{isSubmitting ? "A guardar..." : "Reservar"}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
