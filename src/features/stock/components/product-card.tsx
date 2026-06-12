@@ -1,5 +1,6 @@
 import { Package } from "@/lib/icon-map";
 import { cn } from "@/lib/utils";
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 type ProductCardProps = {
@@ -11,14 +12,6 @@ type ProductCardProps = {
   isSelected?: boolean;
   onClick?: () => void;
 };
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-function getImageUrl(path?: string): string | undefined {
-  if (!path) return undefined;
-  if (path.startsWith("http")) return path;
-  return `${API_URL}${path}`;
-}
 
 export function ProductCard({
   name,

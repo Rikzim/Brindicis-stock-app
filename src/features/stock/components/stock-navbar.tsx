@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Logo } from "@/assets/logo";
 import { Search, Settings, ShieldCheck, LogOut } from "@/lib/icon-map";
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarImage } from "@/components/ui/avatar-image";
@@ -15,14 +16,6 @@ type StockNavbarProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
 };
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-function getImageUrl(path?: string | null): string | undefined {
-  if (!path) return undefined;
-  if (path.startsWith("http")) return path;
-  return `${API_URL}${path}`;
-}
 
 export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
   const user = useAuthStore((s) => s.user);

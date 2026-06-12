@@ -9,6 +9,7 @@ import {
   Plus,
 } from "@/lib/icon-map";
 import type { ProductStock, ProductVariantStock } from "@/lib/stock-types";
+import { getImageUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { CreateReservationPanel } from "./create-reservation-modal";
@@ -19,14 +20,6 @@ type ProductDetailPanelProps = {
   product: ProductStock;
   onClose: () => void;
 };
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-function getImageUrl(path?: string): string | undefined {
-  if (!path) return undefined;
-  if (path.startsWith("http")) return path;
-  return `${API_URL}${path}`;
-}
 
 const STATUS_MAP: Record<number, { label: string; color: string }> = {
   0: { label: "Esgotado", color: "text-red-600 dark:text-red-500" },
@@ -244,14 +237,13 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
               </div>
 
               {filteredVariants.length > 0 && (
-                <div
-                  className={`flex flex-col ${tableNeedsScroll ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}
-                >
+                <div className={`flex flex-col ${tableNeedsScroll ? 'flex-1 min-h-0' : ''}`}>
                   <div className="grid grid-cols-[1.2fr_1fr_0.8fr] text-[10px] font-bold text-slate-400/90 tracking-wider shrink-0 pb-1.5 border-b border-slate-200 dark:border-slate-700/60">
                     <span>Cor</span>
                     <span>Tamanho</span>
                     <span>Disponível</span>
                   </div>
+                  <div className={tableNeedsScroll ? 'flex-1 min-h-0 overflow-y-auto' : ''}>
                   {filteredVariants.map((v) => {
                     const available = v.quantity - v.reserved;
                     return (
@@ -267,6 +259,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
 

@@ -1,95 +1,63 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getReservations,
-  deleteReservation,
-  getProducts,
-  getUsers,
-  createReservation,
-} from "@/lib/stock-api";
-import {
-  Trash2,
-  ChevronDown,
-  Loader2,
-  Eye,
-  Pencil,
-  Plus,
-  X,
-  AlertTriangle,
-} from "lucide-react";
+import { getReservations, deleteReservation, getProducts, getUsers, createReservation } from "@/lib/stock-api";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
+import { FormSelectField } from "@/components/ui/form-select-field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RowActions } from "@/components/ui/row-actions";
+import { PageCard } from "@/components/ui/page-card";
+import { AdminModal } from "@/components/ui/admin-modal";
+import { ConfirmDeleteModal } from "@/components/ui/confirm-delete-modal";
+import { DetailGrid } from "@/components/ui/detail-grid";
+import { useCrudModal } from "@/hooks/use-crud-modal";
 import type { StockReservation, ProductStock } from "@/lib/stock-types";
 
-// Status mapping helper
 function getStatusInfo(status: number) {
   switch (status) {
-    case 0:
-      return { label: "Pendente", className: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400" };
-    case 1:
-      return { label: "Aprovada", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400" };
-    default:
-      return { label: "Rejeitada", className: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400" };
+    case 0: return { label: "Pendente", statusText: "pendente" };
+    case 1: return { label: "Aprovada", statusText: "approved" };
+    default: return { label: "Rejeitada", statusText: "rejected" };
   }
 }
 
 export function AdminReservas() {
   const queryClient = useQueryClient();
+  const crud = useCrudModal<StockReservation>();
   const [selectedEstado, setSelectedEstado] = useState("Todos");
 
-  // Fetch reservations
   const { data: reservations = [], isLoading: loadingReservations } = useQuery({
-    queryKey: ["admin-reservations"],
-    queryFn: getReservations,
-    refetchOnWindowFocus: false,
+    queryKey: ["admin-reservations"], queryFn: getReservations, refetchOnWindowFocus: false,
   });
-
-  // Fetch products and users for the "Add Reservation" modal
   const { data: products = [] } = useQuery({
-    queryKey: ["stock-products"],
-    queryFn: getProducts,
-    refetchOnWindowFocus: false,
+    queryKey: ["stock-products"], queryFn: getProducts, refetchOnWindowFocus: false,
   });
-
   const { data: users = [] } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: getUsers,
-    refetchOnWindowFocus: false,
+    queryKey: ["admin-users"], queryFn: getUsers, refetchOnWindowFocus: false,
   });
 
-  // Mutation to delete a reservation
   const deleteMutation = useMutation({
     mutationFn: deleteReservation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-reservations"] });
       toast.success("Reserva eliminada com sucesso.");
     },
-    onError: (err: any) => {
-      toast.error(`Erro ao eliminar reserva: ${err.message}`);
-    },
+    onError: (err: any) => toast.error(`Erro ao eliminar reserva: ${err.message}`),
   });
 
-  // Modal control states
-  const [activeModal, setActiveModal] = useState<"add" | "view" | "edit" | "delete" | null>(null);
-  const [selectedReservation, setSelectedReservation] = useState<StockReservation | null>(null);
+  const [form, setForm] = useState({ name: "", productId: "", variantId: "", quantity: "1", message: "", proposal: "", order: "", status: "0" });
+  const fc = (f: string) => (v: any) => setForm((p: any) => ({ ...p, [f]: v?.target?.value ?? v }));
 
-  // Form states for Add/Edit
-  const [formName, setFormName] = useState("");
-  const [formProductId, setFormProductId] = useState("");
-  const [formVariantId, setFormVariantId] = useState("");
-  const [formQuantity, setFormQuantity] = useState("1");
-  const [formMessage, setFormMessage] = useState("");
-  const [formProposal, setFormProposal] = useState("");
-  const [formOrder, setFormOrder] = useState("");
-  const [formStatus, setFormStatus] = useState("0"); // status number as string
-
-  // Handle selected product variations in form
   const selectedProduct = useMemo(() => {
-    if (!formProductId) return null;
-    return products.find((p) => p.id.toString() === formProductId) || null;
-  }, [formProductId, products]);
+    if (!form.productId) return null;
+    return products.find((p) => p.id.toString() === form.productId) || null;
+  }, [form.productId, products]);
 
-  // Filter reservations based on selected status
   const filteredReservations = useMemo(() => {
     return reservations.filter((res) => {
       if (selectedEstado === "Todos") return true;
@@ -100,663 +68,193 @@ export function AdminReservas() {
     });
   }, [reservations, selectedEstado]);
 
-  const handleOpenAdd = () => {
-    setFormName(users[0]?.name || "");
-    setFormProductId(products[0]?.id?.toString() || "");
-    setFormVariantId("");
-    setFormQuantity("1");
-    setFormMessage("");
-    setFormProposal("");
-    setFormOrder("");
-    setFormStatus("0");
-    setActiveModal("add");
-  };
+  const userOptions = users.length > 0
+    ? users.map((u: any) => ({ value: u.name, label: u.name }))
+    : [{ value: "Administrador", label: "Administrador" }];
 
-  const handleOpenView = (res: StockReservation) => {
-    setSelectedReservation(res);
-    setActiveModal("view");
+  const productOptions = products.map((p: ProductStock) => ({ value: p.id.toString(), label: `${p.ref} - ${p.name}` }));
+  const variantOptions = selectedProduct?.variants
+    ? selectedProduct.variants.map((v) => ({
+        value: v.id.toString(), label: `${v.color}${v.size ? ` / ${v.size}` : ""} (Disp: ${v.quantity - v.reserved})`,
+      }))
+    : [];
+
+  const resetForm = () => setForm({ name: "", productId: "", variantId: "", quantity: "1", message: "", proposal: "", order: "", status: "0" });
+
+  const handleOpenAdd = () => {
+    resetForm();
+    fc("name")(users[0]?.name || "");
+    fc("productId")(products[0]?.id?.toString() || "");
+    crud.openAdd();
   };
 
   const handleOpenEdit = (res: StockReservation) => {
-    setSelectedReservation(res);
-    setFormName(res.name || "");
-    setFormProductId(res.productId.toString());
-    setFormVariantId(res.variantId?.toString() || "");
-    setFormQuantity(res.quantity.toString());
-    setFormMessage(res.message || "");
-    setFormProposal(res.proposal?.toString() || "");
-    setFormOrder(res.order || "");
-    setFormStatus(res.status.toString());
-    setActiveModal("edit");
-  };
-
-  const handleOpenDelete = (res: StockReservation) => {
-    setSelectedReservation(res);
-    setActiveModal("delete");
+    setForm({ name: res.name || "", productId: res.productId.toString(), variantId: res.variantId?.toString() || "",
+      quantity: res.quantity.toString(), message: res.message || "", proposal: res.proposal?.toString() || "",
+      order: res.order || "", status: res.status.toString() });
+    crud.openEdit(res);
   };
 
   const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName || !formProductId) {
-      toast.error("Comercial e Produto são obrigatórios.");
-      return;
-    }
-
-    const prod = products.find((p) => p.id.toString() === formProductId);
+    if (!form.name || !form.productId) { toast.error("Comercial e Produto são obrigatórios."); return; }
+    const prod = products.find((p) => p.id.toString() === form.productId);
     if (!prod) return;
-
-    // Determine variant and color
     let colorName = "Geral";
-    if (formVariantId && prod.variants) {
-      const selectedVar = prod.variants.find((v) => v.id.toString() === formVariantId);
-      if (selectedVar) colorName = selectedVar.color;
+    if (form.variantId && prod.variants) {
+      const v = prod.variants.find((v) => v.id.toString() === form.variantId);
+      if (v) colorName = v.color;
     }
-
-    const payload = {
-      name: formName,
-      id_product: parseInt(formProductId),
-      quantity: parseInt(formQuantity) || 1,
-      message: formMessage,
-      color: colorName,
-      size: "", // can default or extract if variant has size
-      proposal: formProposal ? parseFloat(formProposal) : undefined,
-      order: formOrder || undefined,
-    };
-
     try {
-      // Create reservation via API
-      await createReservation(payload);
+      await createReservation({
+        name: form.name, id_product: parseInt(form.productId), quantity: parseInt(form.quantity) || 1,
+        message: form.message, color: colorName, size: "",
+        proposal: form.proposal ? parseFloat(form.proposal) : undefined, order: form.order || undefined,
+      });
       queryClient.invalidateQueries({ queryKey: ["admin-reservations"] });
-      toast.success("Reserva criada com sucesso.");
-      setActiveModal(null);
-    } catch (error: any) {
-      // Mock fallback if VITE_API_URL server is down/mocked
-      console.warn("API Error, performing mock mutation", error);
-      
+      toast.success("Reserva criada com sucesso."); crud.close();
+    } catch {
       const newReservation: StockReservation = {
-        id: Date.now(),
-        name: formName,
-        productId: parseInt(formProductId),
-        quantity: parseInt(formQuantity) || 1,
-        message: formMessage,
-        status: 0,
-        viewed: 0,
-        proposal: formProposal ? parseFloat(formProposal) : 0,
-        order: formOrder || null,
-        variantId: formVariantId ? parseInt(formVariantId) : 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        product: prod,
-        ref: prod.ref,
-        variant: prod.variants?.find((v) => v.id.toString() === formVariantId),
+        id: Date.now(), name: form.name, productId: parseInt(form.productId),
+        quantity: parseInt(form.quantity) || 1, message: form.message, status: 0, viewed: 0,
+        proposal: form.proposal ? parseFloat(form.proposal) : 0, order: form.order || null,
+        variantId: form.variantId ? parseInt(form.variantId) : 0,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        product: prod, ref: prod.ref,
+        variant: prod.variants?.find((v) => v.id.toString() === form.variantId),
       };
-
-      queryClient.setQueryData<StockReservation[]>(["admin-reservations"], (old = []) => [
-        newReservation,
-        ...old,
-      ]);
-      toast.success("Reserva criada com sucesso (Modo Local).");
-      setActiveModal(null);
+      queryClient.setQueryData<StockReservation[]>(["admin-reservations"], (old = []) => [newReservation, ...old]);
+      toast.success("Reserva criada com sucesso (Modo Local)."); crud.close();
     }
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedReservation) return;
-
-    const updatedStatus = parseInt(formStatus);
-    const updatedQuantity = parseInt(formQuantity) || 1;
-
-    // Mutate React Query Cache
-    queryClient.setQueryData<StockReservation[]>(["admin-reservations"], (old = []) => {
-      return old.map((res) => {
-        if (res.id !== selectedReservation.id) return res;
-        return {
-          ...res,
-          name: formName,
-          quantity: updatedQuantity,
-          message: formMessage,
-          proposal: formProposal ? parseFloat(formProposal) : 0,
-          order: formOrder || null,
-          status: updatedStatus,
-          updatedAt: new Date().toISOString(),
-        };
-      });
-    });
-
-    toast.success("Reserva atualizada com sucesso.");
-    setActiveModal(null);
+    if (!crud.selected) return;
+    queryClient.setQueryData<StockReservation[]>(["admin-reservations"], (old = []) =>
+      old.map((res) => res.id !== crud.selected!.id ? res : {
+        ...res, name: form.name, quantity: parseInt(form.quantity) || 1, message: form.message,
+        proposal: form.proposal ? parseFloat(form.proposal) : 0, order: form.order || null,
+        status: parseInt(form.status), updatedAt: new Date().toISOString(),
+      })
+    );
+    toast.success("Reserva atualizada com sucesso."); crud.close();
   };
 
-  const handleDeleteConfirm = () => {
-    if (!selectedReservation) return;
-    deleteMutation.mutate(selectedReservation.id);
-    setActiveModal(null);
+  const handleDelete = () => {
+    if (!crud.selected) return;
+    deleteMutation.mutate(crud.selected.id); crud.close();
   };
 
-  const isLoading = loadingReservations;
+  const columns: Column<StockReservation>[] = [
+    { key: "comercial", header: "Comercial", cell: (r) => <span className="font-semibold">{r.name || "-"}</span> },
+    { key: "ref", header: "Referência", cell: (r) => <span className="font-semibold">{r.ref || r.product?.ref || "-"}</span> },
+    { key: "encomenda", header: "Encomenda", cell: (r) => r.order || "-" },
+    { key: "cor", header: "Cor", cell: (r) => r.variant?.color || "-" },
+    { key: "tamanho", header: "Tamanho", cell: (r) => r.variant?.size || "-" },
+    { key: "quantidade", header: "Quantidade", cell: (r) => <span className="font-bold">{r.quantity}</span> },
+    { key: "cx", header: "Cx", cell: (r) => r.variant?.cx || r.product?.cx || "-" },
+    { key: "gaveta", header: "Gaveta", cell: (r) => r.variant?.drawer || r.product?.drawer || "-" },
+    { key: "mensagem", header: "Mensagem", cell: (r) => <span className="max-w-[150px] truncate block" title={r.message}>{r.message || "-"}</span> },
+    { key: "orcamento", header: "Orçamento", cell: (r) => r.proposal ? `${r.proposal} €` : "-" },
+    { key: "estado", header: "Estado", cell: (r) => <StatusBadge status={getStatusInfo(r.status).label} /> },
+    { key: "data", header: "Data", cell: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString("pt-PT") : "-", className: "text-slate-400" },
+    { key: "acoes", header: "Ações", cell: (r) => (
+      <RowActions onView={() => crud.openView(r)} onEdit={() => handleOpenEdit(r)} onDelete={() => crud.openDelete(r)} />
+    ), className: "text-right", headerClassName: "text-right" },
+  ];
+
+  const formContent = (
+    <form id="reservation-form" onSubmit={crud.isAdd ? handleSaveAdd : handleSaveEdit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <FormSelectField label="Comercial (Nome)" id="res-comercial" value={form.name} onValueChange={fc("name")} options={userOptions} placeholder="Selecione um comercial" />
+      <FormField label="Referência Encomenda" htmlFor="res-order">
+        <Input id="res-order" placeholder="Ex: ENC-2026-01" value={form.order} onChange={fc("order")} />
+      </FormField>
+      <div className="flex flex-col gap-1.5 md:col-span-2">
+        <label htmlFor="res-produto" className="text-xs font-semibold text-slate-500 dark:text-slate-400">Selecionar Produto</label>
+        <SearchableSelect id="res-produto" value={form.productId} onValueChange={(v: string) => setForm((p: any) => ({ ...p, productId: v, variantId: "" }))}
+          options={productOptions} disabled={crud.isEdit} placeholder="Selecione o produto" />
+      </div>
+      {selectedProduct && selectedProduct.variants && selectedProduct.variants.length > 0 && (
+        <div className="flex flex-col gap-1.5 md:col-span-2">
+          <label htmlFor="res-variant" className="text-xs font-semibold text-slate-500 dark:text-slate-400">Variante (Cor / Tamanho)</label>
+          <SearchableSelect id="res-variant" value={form.variantId} onValueChange={fc("variantId")}
+            options={variantOptions} disabled={crud.isEdit} placeholder="Geral (Sem variante específica)" />
+        </div>
+      )}
+      <FormField label="Quantidade" htmlFor="res-qty">
+        <Input id="res-qty" type="number" required min="1" value={form.quantity} onChange={fc("quantity")} />
+      </FormField>
+      <FormField label="Orçamento (€)" htmlFor="res-proposal">
+        <Input id="res-proposal" type="number" step="0.01" min="0" placeholder="Ex: 150.00" value={form.proposal} onChange={fc("proposal")} />
+      </FormField>
+      <div className="flex flex-col gap-1.5 md:col-span-2">
+        <label htmlFor="res-message" className="text-xs font-semibold text-slate-500 dark:text-slate-400">Mensagem / Observações</label>
+        <textarea id="res-message" value={form.message} onChange={(e) => setForm((p: any) => ({ ...p, message: e.target.value }))} placeholder="Nota ou comentário da reserva..."
+          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 min-h-[80px]" />
+      </div>
+      {crud.isEdit && (
+        <FormSelectField label="Estado da Reserva" id="res-status" value={form.status} onValueChange={fc("status")}
+          options={[{ value: "0", label: "Pendente" }, { value: "1", label: "Aprovada" }, { value: "2", label: "Rejeitada" }]}
+          placeholder="Selecionar estado" />
+      )}
+    </form>
+  );
 
   return (
     <div className="flex flex-col gap-3 animate-fade-in duration-200 h-full min-h-0 overflow-hidden relative">
-      {/* Filters Area Card containing the Title */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/60 flex flex-col gap-4 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80 shrink-0">
+      <PageCard className="p-6 flex flex-col gap-4 shrink-0">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-slate-800 dark:text-white">
-            Gestão de Reservas
-          </h1>
-          <Button
-            onClick={handleOpenAdd}
-            className="h-10 bg-[#1D58F6] text-white hover:bg-blue-700 px-5 rounded-lg flex items-center gap-2 cursor-pointer font-medium shadow-none"
-          >
-            <Plus className="size-4" />
-            <span>Criar Reserva</span>
+          <h1 className="text-lg font-bold text-slate-800 dark:text-white">Gestão de Reservas</h1>
+          <Button onClick={handleOpenAdd} className="h-10 bg-[#1D58F6] text-white hover:bg-blue-700 px-5 rounded-lg flex items-center gap-2 font-medium shadow-none">
+            <Plus className="size-4" /><span>Criar Reserva</span>
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Estado */}
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="filter-estado" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Estado:
-            </label>
-            <div className="relative">
-              <select
-                id="filter-estado"
-                value={selectedEstado}
-                onChange={(e) => setSelectedEstado(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-              >
-                <option value="Todos">Todos</option>
-                <option value="Pendente">Pendente</option>
-                <option value="Aprovada">Aprovada</option>
-                <option value="Rejeitada">Rejeitada</option>
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
-          </div>
+          <FormSelectField label="Estado" id="filter-estado-res" value={selectedEstado} onValueChange={setSelectedEstado}
+            options={[{ value: "Todos", label: "Todos" }, { value: "Pendente", label: "Pendente" },
+              { value: "Aprovada", label: "Aprovada" }, { value: "Rejeitada", label: "Rejeitada" }]} />
         </div>
+      </PageCard>
+
+      <DataTable columns={columns} data={filteredReservations} isLoading={loadingReservations}
+        loadingMessage="A carregar reservas..." emptyMessage="Sem reservas disponíveis." rowKey={(r) => r.id} />
+      <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 dark:bg-slate-950/20 dark:border-slate-800/80 shrink-0 -mt-3 rounded-b-2xl">
+        <span className="text-xs text-slate-400 dark:text-slate-500">A mostrar {filteredReservations.length} reservas...</span>
       </div>
 
-      {/* Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80 overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-slate-900">
-              <tr className="bg-slate-50/50 border-b border-slate-100 dark:bg-slate-950/20 dark:border-slate-800/80">
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Comercial
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Referência
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Encomenda
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Cor
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Tamanho
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Quantidade
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Cx
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Gaveta
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Mensagem
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Orçamento
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Estado
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Data
-                </th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={13} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="size-6 animate-spin text-blue-600" />
-                      <span className="text-sm text-slate-400 dark:text-slate-500">
-                        A carregar reservas...
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredReservations.length > 0 ? (
-                filteredReservations.map((res) => {
-                  const statusInfo = getStatusInfo(res.status);
-                  return (
-                    <tr
-                      key={res.id}
-                      className="border-b border-slate-100 last:border-0 hover:bg-slate-50/30 dark:border-slate-800/80 dark:hover:bg-slate-800/10 transition-colors"
-                    >
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        {res.name || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        {res.ref || res.product?.ref || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-350">
-                        {res.order || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-350">
-                        {res.variant?.color || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-350">
-                        {res.variant?.size || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-200">
-                        {res.quantity}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-800 dark:text-slate-200">
-                        {res.variant?.cx || res.product?.cx || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                        {res.variant?.drawer || res.product?.drawer || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-[150px] truncate" title={res.message}>
-                        {res.message || "-"}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        {res.proposal ? `${res.proposal} €` : "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusInfo.className}`}>
-                          {statusInfo.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-400 dark:text-slate-500">
-                        {res.createdAt ? new Date(res.createdAt).toLocaleDateString("pt-PT") : "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenView(res)}
-                            className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
-                            title="Visualizar"
-                          >
-                            <Eye className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(res)}
-                            className="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors cursor-pointer"
-                            title="Editar"
-                          >
-                            <Pencil className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
-                            onClick={() => handleOpenDelete(res)}
-                            title="Eliminar"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={13} className="px-6 py-24 text-center">
-                    <span className="text-sm font-medium text-slate-400 dark:text-slate-500">
-                      Sem Reservas disponíveis
-                    </span>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer info text */}
-        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 dark:bg-slate-950/20 dark:border-slate-800/80 shrink-0">
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            A mostrar {filteredReservations.length} reservas...
-          </span>
-        </div>
-      </div>
-
-      {/* --- MODALS --- */}
-
-      {/* Add / Edit Reservation Modal */}
-      {(activeModal === "add" || activeModal === "edit") && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in duration-200">
-          <form
-            onSubmit={activeModal === "add" ? handleSaveAdd : handleSaveEdit}
-            className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden my-8 animate-in zoom-in-95 duration-200"
-          >
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-white text-base">
-                {activeModal === "add" ? "Criar Nova Reserva" : "Editar Reserva"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            <div className="p-6 max-h-[70vh] overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Comercial (Nome)
-                </label>
-                <select
-                  required
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                >
-                  <option value="">Selecione um comercial</option>
-                  {users.map((u: any) => (
-                    <option key={u.id} value={u.name}>
-                      {u.name}
-                    </option>
-                  ))}
-                  {users.length === 0 && <option value="Administrador">Administrador</option>}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Referência Encomenda
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: ENC-2026-01"
-                  value={formOrder}
-                  onChange={(e) => setFormOrder(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Selecionar Produto
-                </label>
-                <select
-                  required
-                  disabled={activeModal === "edit"}
-                  value={formProductId}
-                  onChange={(e) => {
-                    setFormProductId(e.target.value);
-                    setFormVariantId("");
-                  }}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                >
-                  <option value="">Selecione o produto</option>
-                  {products.map((p: ProductStock) => (
-                    <option key={p.id} value={p.id}>
-                      {p.ref} - {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedProduct && selectedProduct.variants && selectedProduct.variants.length > 0 && (
-                <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    Variante (Cor / Tamanho)
-                  </label>
-                  <select
-                    disabled={activeModal === "edit"}
-                    value={formVariantId}
-                    onChange={(e) => setFormVariantId(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                  >
-                    <option value="">Geral (Sem variante específica)</option>
-                    {selectedProduct.variants.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.color} {v.size ? `/ ${v.size}` : ""} (Disp: {v.quantity - v.reserved})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Quantidade
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="1"
-                  value={formQuantity}
-                  onChange={(e) => setFormQuantity(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Orçamento (€)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Ex: 150.00"
-                  value={formProposal}
-                  onChange={(e) => setFormProposal(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  Mensagem / Observações
-                </label>
-                <textarea
-                  placeholder="Nota ou comentário da reserva..."
-                  value={formMessage}
-                  onChange={(e) => setFormMessage(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 min-h-[80px]"
-                />
-              </div>
-
-              {activeModal === "edit" && (
-                <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    Estado da Reserva
-                  </label>
-                  <select
-                    value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
-                  >
-                    <option value="0">Pendente</option>
-                    <option value="1">Aprovada</option>
-                    <option value="2">Rejeitada</option>
-                  </select>
-                </div>
-              )}
-            </div>
-
-            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-850 flex items-center justify-end gap-2.5">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setActiveModal(null)}
-                className="h-10 px-4 rounded-lg text-sm font-medium"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5 rounded-lg text-sm font-medium shadow-none"
-              >
-                Salvar
-              </Button>
-            </div>
-          </form>
-        </div>
+      {(crud.isAdd || crud.isEdit) && (
+        <AdminModal open onClose={crud.close} title={crud.isAdd ? "Criar Nova Reserva" : "Editar Reserva"}
+          footer={<><Button variant="outline" onClick={crud.close} className="h-10 px-4">Cancelar</Button>
+            <Button type="submit" form="reservation-form" className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Salvar</Button></>}>
+          {formContent}
+        </AdminModal>
       )}
 
-      {/* View Reservation Modal */}
-      {activeModal === "view" && selectedReservation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in duration-200">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-white text-base">
-                Detalhes da Reserva
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="size-5" />
-              </button>
+      {crud.isView && crud.selected && (
+        <AdminModal open onClose={crud.close} title="Detalhes da Reserva"
+          footer={<Button onClick={crud.close} className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Fechar</Button>}>
+          <DetailGrid items={[
+            { label: "Comercial", value: crud.selected.name || "Sem Nome" },
+            { label: "Produto (Ref)", value: `${crud.selected.product?.name || "Produto"} (${crud.selected.ref || crud.selected.product?.ref})` },
+            { label: "Encomenda", value: crud.selected.order || "-" },
+            { label: "Variante", value: `${crud.selected.variant?.color || "-"}${crud.selected.variant?.size ? ` / ${crud.selected.variant.size}` : ""}` },
+            { label: "Quantidade", value: `${crud.selected.quantity} unidades` },
+            { label: "Orçamento", value: crud.selected.proposal ? `${crud.selected.proposal.toFixed(2)} €` : "-" },
+            { label: "Estado", value: <StatusBadge status={getStatusInfo(crud.selected.status).label} /> },
+          ]} />
+          {crud.selected.message && (
+            <div className="mt-2">
+              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mensagem</span>
+              <p className="text-sm text-slate-600 dark:text-slate-350 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-100 dark:border-slate-850">{crud.selected.message}</p>
             </div>
-
-            <div className="p-6 flex flex-col gap-4">
-              <div>
-                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                  Comercial
-                </span>
-                <span className="text-base font-bold text-slate-800 dark:text-slate-100">
-                  {selectedReservation.name || "Sem Nome"}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Produto (Ref)
-                  </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {selectedReservation.product?.name || "Produto"} ({selectedReservation.ref || selectedReservation.product?.ref})
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Encomenda
-                  </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {selectedReservation.order || "-"}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Variante (Cor / Tam)
-                  </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {selectedReservation.variant?.color || "-"} {selectedReservation.variant?.size ? `/ ${selectedReservation.variant.size}` : ""}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Quantidade
-                  </span>
-                  <span className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
-                    {selectedReservation.quantity} unidades
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Orçamento
-                  </span>
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                    {selectedReservation.proposal ? `${selectedReservation.proposal.toFixed(2)} €` : "-"}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Estado
-                  </span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getStatusInfo(selectedReservation.status).className}`}>
-                    {getStatusInfo(selectedReservation.status).label}
-                  </span>
-                </div>
-              </div>
-
-              {selectedReservation.message && (
-                <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Mensagem
-                  </span>
-                  <p className="text-sm text-slate-600 dark:text-slate-350 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-100 dark:border-slate-850">
-                    {selectedReservation.message}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-850 flex items-center justify-end">
-              <Button
-                type="button"
-                onClick={() => setActiveModal(null)}
-                className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5 rounded-lg text-sm font-medium shadow-none animate-in fade-in"
-              >
-                Fechar
-              </Button>
-            </div>
-          </div>
-        </div>
+          )}
+        </AdminModal>
       )}
 
-      {/* Delete Reservation Confirmation Modal */}
-      {activeModal === "delete" && selectedReservation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in duration-200">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 flex flex-col items-center text-center gap-4">
-              <div className="size-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center dark:bg-red-950/20">
-                <AlertTriangle className="size-6" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <h3 className="font-bold text-slate-800 dark:text-white text-base">
-                  Eliminar Reserva
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Tem a certeza que deseja eliminar esta reserva de{" "}
-                  <strong className="text-slate-800 dark:text-slate-100 font-bold">
-                    {selectedReservation.quantity}x {selectedReservation.product?.name || "Produto"}
-                  </strong>{" "}
-                  feita por {selectedReservation.name}? Esta ação não pode ser desfeita.
-                </p>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-850 flex items-center justify-end gap-2.5">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setActiveModal(null)}
-                className="h-10 px-4 rounded-lg text-sm font-medium"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                onClick={handleDeleteConfirm}
-                className="h-10 bg-red-600 hover:bg-red-700 text-white px-5 rounded-lg text-sm font-medium shadow-none animate-in fade-in"
-              >
-                Eliminar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal open={crud.isDelete} onClose={crud.close} onConfirm={handleDelete}
+        title="Eliminar Reserva"
+        itemName={crud.selected ? `${crud.selected.quantity}x ${crud.selected.product?.name || "Produto"} (${crud.selected.name})` : ""} />
     </div>
   );
 }

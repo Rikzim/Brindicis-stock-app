@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { Logo } from "@/assets/logo";
+import { getImageUrl } from "@/lib/utils";
 import {
   LayoutDashboard,
   Layers,
@@ -14,19 +15,12 @@ import {
   LogOut,
   ShieldCheck,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarImage } from "@/components/ui/avatar-image";
 import { AvatarFallback } from "@/components/ui/avatar-fallback";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-function getImageUrl(path?: string | null): string | undefined {
-  if (!path) return undefined;
-  if (path.startsWith("http")) return path;
-  return `${API_URL}${path}`;
-}
 
 const navItems = [
   {
@@ -76,12 +70,14 @@ export function AdminLayout() {
       {/* Top Navbar */}
       <nav className="relative flex h-16 items-center justify-between bg-white px-6 rounded-2xl border border-slate-200/60 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80 shrink-0">
         <div className="flex w-[280px] shrink-0 items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center bg-[#1D58F6] rounded-lg shrink-0">
-            <Logo className="h-5 w-auto" fill="#FFFFFF" />
-          </div>
-          <span className="text-base font-semibold tracking-tight text-slate-800 dark:text-slate-100">
-            Brindicis Stock
-          </span>
+          <Button variant="ghost" onClick={() => window.location.reload()} className="flex items-center gap-2.5 px-3 py-1.5 h-auto rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:shadow-none">
+            <div className="flex size-8 items-center justify-center bg-[#1D58F6] rounded-lg shrink-0">
+              <Logo className="h-5 w-auto" fill="#FFFFFF" />
+            </div>
+            <span className="text-base font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+              Brindicis Stock
+            </span>
+          </Button>
         </div>
 
         <div className="relative flex flex-1 justify-center max-w-5xl">
@@ -101,25 +97,13 @@ export function AdminLayout() {
         </div>
 
         <div className="flex w-[280px] shrink-0 items-center justify-end gap-3">
-          <button
-            type="button"
-            className="text-blue-600 hover:bg-slate-50 rounded-lg p-2 transition-colors cursor-pointer dark:text-blue-400 dark:hover:bg-slate-800"
-            title="Modo Admin Ativo"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/" })} className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/20" title="Ir para Página Principal">
             <ShieldCheck className="size-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowSettings(!showSettings)}
-            className="text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg p-2 transition-colors cursor-pointer dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
-          >
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)} className="text-slate-500 dark:text-slate-400">
             <Settings className="size-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowProfile(!showProfile)}
-            className="rounded-full cursor-pointer focus:outline-none ring-1 ring-slate-100 dark:ring-slate-800"
-          >
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setShowProfile(!showProfile)} className="rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-slate-300 dark:hover:ring-slate-500 transition-all">
             <Avatar className="size-8">
               {user?.image_path ? (
                 <AvatarImage src={getImageUrl(user.image_path)} alt={user.name} />
@@ -129,14 +113,14 @@ export function AdminLayout() {
                 </AvatarFallback>
               )}
             </Avatar>
-          </button>
+          </Button>
         </div>
 
         {/* Dropdowns */}
         {showSettings && (
           <>
             <div className="fixed inset-0 z-45" role="presentation" onClick={() => setShowSettings(false)} />
-            <div className="absolute right-6 top-18 z-50 w-64 rounded-xl border border-slate-200 bg-white p-4 transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 flex flex-col gap-4">
+            <div className="absolute right-6 top-18 z-50 w-64 rounded-xl border border-slate-200 bg-white p-4 transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 flex flex-col gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
               <h4 className="text-sm font-semibold text-slate-850 dark:text-slate-100 border-b border-slate-100 pb-2 dark:border-slate-800/80">
                 Configurações
               </h4>
@@ -167,7 +151,7 @@ export function AdminLayout() {
         {showProfile && (
           <>
             <div className="fixed inset-0 z-45" role="presentation" onClick={() => setShowProfile(false)} />
-            <div className="absolute right-6 top-18 z-50 w-56 rounded-xl border border-slate-200/60 bg-white transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+            <div className="absolute right-6 top-18 z-50 w-56 rounded-xl border border-slate-200/60 bg-white transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
               <div className="px-4 py-3.5 flex flex-col border-b border-slate-100 dark:border-slate-800/80">
                 <span className="text-sm font-bold text-slate-850 dark:text-slate-100">
                   {user?.name || "Admin"}
@@ -176,14 +160,10 @@ export function AdminLayout() {
                   {user?.email || "admin@brindicis.local"}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex w-full items-center gap-3 px-4 py-3 hover:bg-red-50/40 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 text-sm font-semibold transition-colors cursor-pointer"
-              >
+              <Button variant="ghost" onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 h-auto justify-start text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 rounded-none">
                 <LogOut className="size-4" />
                 <span>Sair</span>
-              </button>
+              </Button>
             </div>
           </>
         )}
