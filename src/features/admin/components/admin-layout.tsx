@@ -8,6 +8,7 @@ import {
   Layers,
   FileText,
   Briefcase,
+  Tags,
   ArrowLeft,
   Search,
   Settings,
@@ -48,6 +49,11 @@ const navItems = [
     name: "Fornecedores",
     path: "/admin/fornecedores",
     icon: Briefcase,
+  },
+  {
+    name: "Famílias",
+    path: "/admin/familias",
+    icon: Tags,
   },
 ];
 
