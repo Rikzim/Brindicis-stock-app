@@ -10,6 +10,7 @@ import {
 } from "@/lib/icon-map";
 import type { ProductStock, ProductVariantStock } from "@/lib/stock-types";
 import { Button } from "@/components/ui/button";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { CreateReservationPanel } from "./create-reservation-modal";
 import { ProductReservationsPanel } from "./product-reservations-panel";
 
@@ -87,7 +88,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
   const statusInfo = STATUS_MAP[product.status] ?? { label: "Desconhecido", color: "text-slate-500" };
 
   return (
-    <div className="flex h-full w-[460px] shrink-0 flex-col overflow-hidden bg-white border border-slate-200/60 rounded-2xl shadow-xs relative dark:bg-slate-900 dark:border-slate-800/80">
+    <div className="flex h-full w-[460px] shrink-0 flex-col overflow-hidden bg-white border border-slate-200/60 rounded-2xl shadow-xs relative dark:bg-slate-900 dark:border-slate-800/80 animate-in fade-in slide-in-from-right-2 duration-300">
       {view === "reserving" ? (
         <CreateReservationPanel
           product={product}
@@ -101,13 +102,9 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
         />
       ) : (
         <>
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-3 right-3 z-10 flex size-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-450 hover:text-slate-650 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-3 right-3 z-10 size-6">
             <X className="size-3.5" />
-          </button>
+          </Button>
 
           <div className="flex-1 overflow-hidden">
             <div className="p-5 flex flex-col gap-5 h-full">
@@ -131,26 +128,26 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                   {hasImages && images.length > 1 && (
                     <>
                       <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="icon"
                         onClick={goPrevImage}
-                        className="absolute left-0.5 top-1/2 -translate-y-1/2 size-5 bg-white/80 hover:bg-white text-slate-700 shadow-xs rounded-md"
+                        className="absolute left-1 top-1/2 -translate-y-1/2 size-6 opacity-80 hover:opacity-100 transition-opacity"
                       >
-                        <ChevronLeft className="size-3" />
+                        <ChevronLeft className="size-3.5" />
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="icon"
                         onClick={goNextImage}
-                        className="absolute right-0.5 top-1/2 -translate-y-1/2 size-5 bg-white/80 hover:bg-white text-slate-700 shadow-xs rounded-md"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 size-6 opacity-80 hover:opacity-100 transition-opacity"
                       >
-                        <ChevronRight className="size-3" />
+                        <ChevronRight className="size-3.5" />
                       </Button>
                       <div className="absolute bottom-1.5 flex gap-1">
                         {images.map((_, i) => (
                           <div
                             key={i}
-                            className={`size-1 rounded-full ${i === currentImageIndex ? "bg-blue-600 dark:bg-blue-500" : "bg-slate-200 dark:bg-slate-800"}`}
+                            className={`size-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? "bg-blue-600 dark:bg-blue-500 w-3" : "bg-slate-200 dark:bg-slate-800"}`}
                           />
                         ))}
                       </div>
@@ -190,16 +187,17 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                     <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1 dark:text-slate-500">
                       COR
                     </span>
-                    <select
+                    <SearchableSelect
                       value={selectedColor}
-                      onChange={(e) => setSelectedColor(e.target.value)}
-                      className="flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer shadow-3xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/50 appearance-none"
-                    >
-                      <option value="">Todas as cores</option>
-                      {product.colors.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
+                      onValueChange={setSelectedColor}
+                      options={[
+                        { value: "", label: "Todas as cores" },
+                        ...product.colors.map((c) => ({ value: c.name, label: c.name })),
+                      ]}
+                      placeholder="Todas as cores"
+                      searchPlaceholder="Procurar cor..."
+                      emptyMessage="Nenhuma cor encontrada."
+                    />
                   </div>
                 )}
 
@@ -208,16 +206,17 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                     <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1 dark:text-slate-500">
                       TAMANHO
                     </span>
-                    <select
+                    <SearchableSelect
                       value={selectedSize}
-                      onChange={(e) => setSelectedSize(e.target.value)}
-                      className="flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer shadow-3xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/50 appearance-none"
-                    >
-                      <option value="">Todos os tamanhos</option>
-                      {product.sizes.map((s) => (
-                        <option key={s.size} value={s.size}>{s.size}</option>
-                      ))}
-                    </select>
+                      onValueChange={setSelectedSize}
+                      options={[
+                        { value: "", label: "Todos os tamanhos" },
+                        ...product.sizes.map((s) => ({ value: s.size, label: s.size })),
+                      ]}
+                      placeholder="Todos os tamanhos"
+                      searchPlaceholder="Procurar tamanho..."
+                      emptyMessage="Nenhum tamanho encontrado."
+                    />
                   </div>
                 )}
 
@@ -225,16 +224,21 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1 dark:text-slate-500">
                     DISPONIBILIDADE
                   </span>
-                  <span className="flex flex-col h-8 items-start text-xs font-semibold gap-0">
+                  <span className="flex flex-col items-start text-xs font-semibold gap-0.5">
                     <span className={statusInfo.color}>{statusInfo.label}</span>
-                    <span className="text-slate-400 font-normal text-[10px] dark:text-slate-500">
-                      {filteredAvailable > 0 || (!selectedColor && !selectedSize)
-                        ? `${filteredAvailable} un. disponíveis`
-                        : "Sem stock disponível"}
-                      {selectedColor && !selectedSize ? " para esta cor" : ""}
-                      {selectedSize && !selectedColor ? " para este tamanho" : ""}
-                      {selectedColor && selectedSize ? " para esta combinação" : ""}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center rounded-md bg-blue-600 px-1.5 py-0.5 text-xs font-bold text-white shadow-2xs">
+                        {filteredAvailable}
+                      </span>
+                      <span className="text-xs text-slate-600 dark:text-slate-400">un. disponíveis</span>
+                    </div>
+                    {(selectedColor || selectedSize) && (
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        {selectedColor && !selectedSize ? "para esta cor" : ""}
+                        {selectedSize && !selectedColor ? "para este tamanho" : ""}
+                        {selectedColor && selectedSize ? "para esta combinação" : ""}
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>
@@ -253,7 +257,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                     return (
                       <div
                         key={v.id}
-                        className="grid grid-cols-[1.2fr_1fr_0.8fr] py-1.5 text-xs text-slate-700 border-b border-slate-100 last:border-b-0 dark:text-slate-300 dark:border-slate-800/20"
+                        className="grid grid-cols-[1.2fr_1fr_0.8fr] py-1.5 text-xs text-slate-700 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors duration-150 dark:text-slate-300 dark:border-slate-800/20 dark:hover:bg-slate-800/30"
                       >
                         <span className="font-medium">{v.color}</span>
                         <span className="text-slate-500 dark:text-slate-400">{v.size || "—"}</span>
@@ -317,23 +321,15 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
             </div>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 grid grid-cols-2 gap-3 dark:border-slate-800 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => setView("reservations")}
-              className="flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              <Calendar className="size-3.5 text-slate-500" />
+          <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 grid grid-cols-2 gap-3 dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <Button variant="outline" size="sm" onClick={() => setView("reservations")} className="h-9">
+              <Calendar className="size-3.5" />
               <span>Ver Reservas</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("reserving")}
-              className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-md transition-colors"
-            >
+            </Button>
+            <Button variant="default" size="sm" onClick={() => setView("reserving")} className="h-9 bg-blue-600 hover:bg-blue-700 active:scale-95">
               <Plus className="size-3.5" />
               <span>Adicionar Reserva</span>
-            </button>
+            </Button>
           </div>
         </>
       )}

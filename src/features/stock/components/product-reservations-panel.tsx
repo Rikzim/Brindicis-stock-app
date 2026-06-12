@@ -4,6 +4,7 @@ import type { ProductStock } from "@/lib/stock-types";
 import { getProductReservations, deleteReservation } from "@/lib/stock-api";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 type ProductReservationsPanelProps = {
   product: ProductStock;
@@ -67,13 +68,9 @@ export function ProductReservationsPanel({
             Reservas do Produto
           </h2>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex size-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-450 hover:text-slate-650 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-        >
+        <Button variant="ghost" size="icon" onClick={onClose} className="size-7">
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -121,14 +118,9 @@ export function ProductReservationsPanel({
                       {formatDate(r.createdAt)}
                     </span>
                     <div className="col-span-2 text-right flex justify-end">
-                      <button
-                        type="button"
-                        disabled={isDeletingId === r.id}
-                        onClick={() => handleDelete(r.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50/50 p-1.5 rounded-lg transition-colors cursor-pointer dark:hover:bg-red-950/20"
-                      >
+                      <Button variant="ghost" size="icon" disabled={isDeletingId === r.id} onClick={() => handleDelete(r.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50/50 dark:hover:bg-red-950/20 size-8">
                         <Trash2 className="size-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -145,24 +137,16 @@ export function ProductReservationsPanel({
       </div>
 
       {/* Footer Buttons */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 flex items-center gap-3 dark:border-slate-800 dark:bg-slate-900">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-755 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-        >
+      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 flex items-center gap-3 dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <Button variant="outline" onClick={onClose} className="h-11 px-5">
           <ChevronLeft className="size-4" />
           <span>Voltar</span>
-        </button>
+        </Button>
 
-        <button
-          type="button"
-          onClick={onAddReservation}
-          className="flex-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 cursor-pointer shadow-md transition-colors"
-        >
+        <Button variant="default" onClick={onAddReservation} className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 active:scale-95">
           <Plus className="size-4" />
           <span>Adicionar Reserva</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Loader2 } from "@/lib/icon-map";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "@/lib/icon-map";
+import { Button } from "@/components/ui/button";
 import { ProductCard } from "./product-card";
 import type { ProductStock } from "@/lib/stock-types";
 
@@ -38,7 +39,7 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
   }
 
   return (
-    <div className="flex flex-1 flex-col justify-between overflow-hidden">
+    <div className="flex flex-1 flex-col justify-between overflow-hidden animate-in fade-in duration-300">
       <div className="grid grid-cols-4 gap-2 p-6 overflow-y-auto">
         {pageProducts.map((product) => {
           const colorNames = product.colors?.map((c) => c.name).join(", ") || "";
@@ -47,8 +48,8 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
               key={product.id}
               name={product.name}
               reference={product.ref}
-              quantityLabel={`Qtd: ${product.quantity}`}
-              colorLabel={colorNames ? `Cor: ${colorNames}` : undefined}
+              quantity={product.quantity}
+              colors={colorNames || undefined}
               image={product.images?.[0]?.url}
               isSelected={selectedId === product.id}
               onClick={() => onSelectProduct(product.id)}
@@ -57,55 +58,51 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
         })}
       </div>
 
-      <div className="mt-auto flex items-center justify-between border-t border-slate-100 px-6 py-4 bg-white dark:bg-slate-900 dark:border-slate-800/80">
-        <div className="flex items-center gap-2">
-          <button type="button" className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60">
-            <span>{ITEMS_PER_PAGE}</span>
-            <ChevronDown className="size-3 text-slate-400 dark:text-slate-500" />
-          </button>
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Linhas por página</span>
-        </div>
-
+      <div className="mt-auto flex items-center justify-end border-t border-slate-100 px-6 py-4 bg-white dark:bg-slate-900 dark:border-slate-800/80 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="flex items-center gap-4">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
             Página {safePage} de {totalPages}
           </span>
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="icon"
               disabled={safePage <= 1}
               onClick={() => setPage(1)}
-              className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"
+              className="size-8"
             >
               <ChevronsLeft className="size-3.5" />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
               disabled={safePage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"
+              className="size-8"
             >
               <ChevronLeft className="size-3.5" />
-            </button>
-            <button type="button" className="flex size-8 items-center justify-center rounded-lg bg-blue-600 text-xs font-semibold text-white cursor-pointer shadow-xs">
+            </Button>
+            <Button variant="default" size="icon" className="size-8 bg-blue-600 hover:bg-blue-700 text-xs font-semibold cursor-default shadow-xs">
               {safePage}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
               disabled={safePage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"
+              className="size-8"
             >
               <ChevronRight className="size-3.5" />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
               disabled={safePage >= totalPages}
               onClick={() => setPage(totalPages)}
-              className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"
+              className="size-8"
             >
               <ChevronsRight className="size-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

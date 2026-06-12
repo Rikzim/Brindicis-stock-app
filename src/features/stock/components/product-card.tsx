@@ -1,11 +1,12 @@
 import { Package } from "@/lib/icon-map";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type ProductCardProps = {
   name: string;
   reference: string;
-  quantityLabel?: string;
-  colorLabel?: string;
+  quantity: number;
+  colors?: string;
   image?: string;
   isSelected?: boolean;
   onClick?: () => void;
@@ -22,8 +23,8 @@ function getImageUrl(path?: string): string | undefined {
 export function ProductCard({
   name,
   reference,
-  quantityLabel = "Quantidade",
-  colorLabel = "Cor: Azul, Preto",
+  quantity,
+  colors,
   image,
   isSelected,
   onClick,
@@ -31,11 +32,11 @@ export function ProductCard({
   const imgSrc = getImageUrl(image);
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-4.5 rounded-xl border border-slate-200/70 bg-white p-4.5 text-left transition-all hover:bg-slate-50 cursor-pointer shadow-2xs dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800/40",
+        "flex items-center gap-4.5 rounded-xl p-4.5 text-left h-auto w-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-in fade-in duration-200",
         isSelected && "border-blue-600 ring-1 ring-blue-600 bg-blue-50/10 dark:border-blue-500 dark:ring-blue-500 dark:bg-blue-500/10",
       )}
     >
@@ -52,9 +53,17 @@ export function ProductCard({
       </div>
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{reference}</p>
-        <p className="truncate text-xs text-slate-400 dark:text-slate-500">{quantityLabel}</p>
-        {colorLabel && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{colorLabel}</p>}
+        <p className="truncate text-xs">
+          <span className="text-slate-400 dark:text-slate-500">Qtd: </span>
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">{quantity}</span>
+        </p>
+        {colors && (
+          <p className="truncate text-xs">
+            <span className="text-slate-400 dark:text-slate-500">Cor: </span>
+            <span className="text-slate-600 dark:text-slate-300">{colors}</span>
+          </p>
+        )}
       </div>
-    </button>
+    </Button>
   );
 }
