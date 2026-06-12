@@ -11,9 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedAdminStockRouteImport } from './routes/_authenticated/admin/stock'
+import { Route as AuthenticatedAdminReservasRouteImport } from './routes/_authenticated/admin/reservas'
+import { Route as AuthenticatedAdminFornecedoresRouteImport } from './routes/_authenticated/admin/fornecedores'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -22,6 +27,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const authSignInRoute = authSignInRouteImport.update({
@@ -39,18 +49,49 @@ const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminStockRoute = AuthenticatedAdminStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminReservasRoute =
+  AuthenticatedAdminReservasRouteImport.update({
+    id: '/reservas',
+    path: '/reservas',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminFornecedoresRoute =
+  AuthenticatedAdminFornecedoresRouteImport.update({
+    id: '/fornecedores',
+    path: '/fornecedores',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
+  '/admin/reservas': typeof AuthenticatedAdminReservasRoute
+  '/admin/stock': typeof AuthenticatedAdminStockRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
+  '/admin/reservas': typeof AuthenticatedAdminReservasRoute
+  '/admin/stock': typeof AuthenticatedAdminStockRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +99,47 @@ export interface FileRoutesById {
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
+  '/_authenticated/admin/reservas': typeof AuthenticatedAdminReservasRoute
+  '/_authenticated/admin/stock': typeof AuthenticatedAdminStockRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/forgot-password' | '/otp' | '/sign-in'
+  fullPaths:
+    | '/'
+    | '/forgot-password'
+    | '/otp'
+    | '/sign-in'
+    | '/admin'
+    | '/admin/fornecedores'
+    | '/admin/reservas'
+    | '/admin/stock'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/forgot-password' | '/otp' | '/sign-in' | '/'
+  to:
+    | '/forgot-password'
+    | '/otp'
+    | '/sign-in'
+    | '/'
+    | '/admin/fornecedores'
+    | '/admin/reservas'
+    | '/admin/stock'
+    | '/admin'
   id:
     | '__root__'
     | '/_authenticated'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/sign-in'
+    | '/_authenticated/admin'
     | '/_authenticated/'
+    | '/_authenticated/admin/fornecedores'
+    | '/_authenticated/admin/reservas'
+    | '/_authenticated/admin/stock'
+    | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/(auth)/sign-in': {
       id: '/(auth)/sign-in'
       path: '/sign-in'
@@ -118,14 +193,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/stock': {
+      id: '/_authenticated/admin/stock'
+      path: '/stock'
+      fullPath: '/admin/stock'
+      preLoaderRoute: typeof AuthenticatedAdminStockRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/reservas': {
+      id: '/_authenticated/admin/reservas'
+      path: '/reservas'
+      fullPath: '/admin/reservas'
+      preLoaderRoute: typeof AuthenticatedAdminReservasRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/fornecedores': {
+      id: '/_authenticated/admin/fornecedores'
+      path: '/fornecedores'
+      fullPath: '/admin/fornecedores'
+      preLoaderRoute: typeof AuthenticatedAdminFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminFornecedoresRoute: typeof AuthenticatedAdminFornecedoresRoute
+  AuthenticatedAdminReservasRoute: typeof AuthenticatedAdminReservasRoute
+  AuthenticatedAdminStockRoute: typeof AuthenticatedAdminStockRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminFornecedoresRoute: AuthenticatedAdminFornecedoresRoute,
+  AuthenticatedAdminReservasRoute: AuthenticatedAdminReservasRoute,
+  AuthenticatedAdminStockRoute: AuthenticatedAdminStockRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

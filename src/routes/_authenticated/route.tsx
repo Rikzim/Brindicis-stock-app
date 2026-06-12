@@ -1,6 +1,5 @@
-import { redirect, createFileRoute } from "@tanstack/react-router";
+import { redirect, createFileRoute, Outlet } from "@tanstack/react-router";
 import { useAuthStore } from "@/stores/auth-store";
-import { StockPage } from "@/features/stock";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: () => {
@@ -13,5 +12,5 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  return <StockPage />;
+  return <Outlet />;
 }
