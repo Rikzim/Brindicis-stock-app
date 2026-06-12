@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createReservation, getReservations, getUsers } from "@/lib/stock-api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
 
 
@@ -318,13 +319,9 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
             Criar Reserva
           </h2>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex size-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-        >
+        <Button variant="ghost" size="icon" onClick={onClose} className="size-7">
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -373,25 +370,16 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
       </div>
 
       {/* Footer Buttons */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 flex items-center gap-3 dark:border-slate-800 dark:bg-slate-900">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-750 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-        >
+      <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 flex items-center gap-3 dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <Button variant="outline" onClick={onClose} className="h-11 px-5">
           <ChevronLeft className="size-4" />
           <span>Voltar</span>
-        </button>
+        </Button>
         
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={handleSave}
-          className="flex-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-md transition-colors"
-        >
+        <Button variant="default" disabled={isSubmitting} onClick={handleSave} className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 active:scale-95">
           <ShieldCheck className="size-4" />
           <span>{isSubmitting ? "A guardar..." : "Reservar"}</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

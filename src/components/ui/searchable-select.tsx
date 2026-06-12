@@ -1,6 +1,20 @@
-import * as React from "react";
-import { ChevronDownIcon } from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { Check, ChevronsUpDown } from "@/lib/icon-map";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export type SelectOption = {
   value: string;
@@ -21,64 +35,80 @@ type SearchableSelectProps = {
 };
 
 export function SearchableSelect({
-  id,
   value,
   onValueChange,
   options,
-  placeholder = "Select...",
-  disabled,
+  placeholder = "Selecionar",
+  searchPlaceholder = "Pesquisar...",
+  emptyMessage = "Sem resultados.",
   className,
+  disabled,
 }: SearchableSelectProps) {
-  const [search, setSearch] = React.useState("");
-  const [focused, setFocused] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  const selectedOption = options.find((o) => o.value === value) || null;
-
-  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const matched = options.find((o) => o.label === e.target.value);
-    if (matched) {
-      onValueChange(matched.value === value ? "" : matched.value);
-      setSearch("");
-    } else {
-      setSearch(e.target.value);
-    }
-  };
-
-  const handleBlur = () => {
-    setFocused(false);
-    if (!search && selectedOption) {
-      setSearch("");
-    }
-  };
-
-  const displayValue = focused ? search : (selectedOption?.label ?? "");
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [triggerWidth, setTriggerWidth] = useState(0);
+  const selected = options.find((o) => o.value === value);
+  const listboxId = useId();
 
   return (
-    <div className="relative">
-      <input
-        ref={inputRef}
-        id={id}
-        type="text"
-        aria-label={placeholder}
-        placeholder={placeholder}
-        value={displayValue}
-        onChange={handleSelect}
-        onFocus={() => { setFocused(true); setSearch(""); }}
-        onBlur={handleBlur}
-        disabled={disabled}
-        className={cn(
-          "flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal pr-8 hover:bg-slate-50 dark:border-slate-850 dark:bg-slate-950 dark:hover:bg-slate-800/80",
-          !selectedOption && !focused && "text-muted-foreground",
-          className,
-        )}
-      />
-      <ChevronDownIcon className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50" />
-      <datalist id="searchable-select-list">
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.label} label={opt.label}>{opt.label}</option>
-        ))}
-      </datalist>
-    </div>
+    <Popover open={open} onOpenChange={(next) => {
+      setOpen(next);
+      if (next && triggerRef.current) {
+        setTriggerWidth(triggerRef.current.offsetWidth);
+      }
+    }}>
+      <PopoverTrigger asChild>
+        <Button
+          ref={triggerRef}
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          disabled={disabled}
+          className={cn(
+            "flex w-full min-w-0 shrink items-center justify-between overflow-hidden font-normal",
+            !selected && "text-muted-foreground",
+            className,
+          )}
+        >
+          <span className="truncate">{selected?.label ?? placeholder}</span>
+          <ChevronsUpDown className="ml-1 size-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        id={listboxId}
+        className="p-0"
+        align="start"
+        style={{ minWidth: triggerWidth > 0 ? triggerWidth : undefined }}
+      >
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            <CommandGroup>
+              {options.map((item) => (
+                <CommandItem
+                  key={item.value}
+                  value={item.value}
+                  keywords={[item.label]}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 size-4",
+                      value === item.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {item.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

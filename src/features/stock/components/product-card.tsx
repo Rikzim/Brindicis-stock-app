@@ -1,5 +1,6 @@
 import { Package } from "@/lib/icon-map";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type ProductCardProps = {
   name: string;
@@ -31,11 +32,11 @@ export function ProductCard({
   const imgSrc = getImageUrl(image);
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-4.5 rounded-xl border border-slate-200/70 bg-white p-4.5 text-left transition-all hover:bg-slate-50 cursor-pointer shadow-2xs dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800/40",
+        "flex items-center gap-4.5 rounded-xl p-4.5 text-left h-auto w-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-in fade-in duration-200",
         isSelected && "border-blue-600 ring-1 ring-blue-600 bg-blue-50/10 dark:border-blue-500 dark:ring-blue-500 dark:bg-blue-500/10",
       )}
     >
@@ -55,6 +56,6 @@ export function ProductCard({
         <p className="truncate text-xs text-slate-400 dark:text-slate-500">{quantityLabel}</p>
         {colorLabel && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{colorLabel}</p>}
       </div>
-    </button>
+    </Button>
   );
 }

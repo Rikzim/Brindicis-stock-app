@@ -42,7 +42,7 @@ export function FiltersBar({
   };
 
   return (
-    <div className="grid grid-cols-5 gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-800/80">
+    <div className="grid grid-cols-5 gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 animate-in fade-in slide-in-from-top-1 duration-300">
       <div className="flex flex-col">
         <span className="text-[11px] font-semibold text-slate-700 mb-1.5 tracking-wide dark:text-slate-350">
           Família
