@@ -19,6 +19,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminStockRouteImport } from './routes/_authenticated/admin/stock'
 import { Route as AuthenticatedAdminReservasRouteImport } from './routes/_authenticated/admin/reservas'
 import { Route as AuthenticatedAdminFornecedoresRouteImport } from './routes/_authenticated/admin/fornecedores'
+import { Route as AuthenticatedAdminFamiliasRouteImport } from './routes/_authenticated/admin/familias'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -71,6 +72,12 @@ const AuthenticatedAdminFornecedoresRoute =
     path: '/fornecedores',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminFamiliasRoute =
+  AuthenticatedAdminFamiliasRouteImport.update({
+    id: '/familias',
+    path: '/familias',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin/familias': typeof AuthenticatedAdminFamiliasRoute
   '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/admin/reservas': typeof AuthenticatedAdminReservasRoute
   '/admin/stock': typeof AuthenticatedAdminStockRoute
@@ -88,6 +96,7 @@ export interface FileRoutesByTo {
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/familias': typeof AuthenticatedAdminFamiliasRoute
   '/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/admin/reservas': typeof AuthenticatedAdminReservasRoute
   '/admin/stock': typeof AuthenticatedAdminStockRoute
@@ -101,6 +110,7 @@ export interface FileRoutesById {
   '/(auth)/sign-in': typeof authSignInRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/familias': typeof AuthenticatedAdminFamiliasRoute
   '/_authenticated/admin/fornecedores': typeof AuthenticatedAdminFornecedoresRoute
   '/_authenticated/admin/reservas': typeof AuthenticatedAdminReservasRoute
   '/_authenticated/admin/stock': typeof AuthenticatedAdminStockRoute
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/otp'
     | '/sign-in'
     | '/admin'
+    | '/admin/familias'
     | '/admin/fornecedores'
     | '/admin/reservas'
     | '/admin/stock'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/otp'
     | '/sign-in'
     | '/'
+    | '/admin/familias'
     | '/admin/fornecedores'
     | '/admin/reservas'
     | '/admin/stock'
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
     | '/(auth)/sign-in'
     | '/_authenticated/admin'
     | '/_authenticated/'
+    | '/_authenticated/admin/familias'
     | '/_authenticated/admin/fornecedores'
     | '/_authenticated/admin/reservas'
     | '/_authenticated/admin/stock'
@@ -221,10 +234,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFornecedoresRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/familias': {
+      id: '/_authenticated/admin/familias'
+      path: '/familias'
+      fullPath: '/admin/familias'
+      preLoaderRoute: typeof AuthenticatedAdminFamiliasRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminFamiliasRoute: typeof AuthenticatedAdminFamiliasRoute
   AuthenticatedAdminFornecedoresRoute: typeof AuthenticatedAdminFornecedoresRoute
   AuthenticatedAdminReservasRoute: typeof AuthenticatedAdminReservasRoute
   AuthenticatedAdminStockRoute: typeof AuthenticatedAdminStockRoute
@@ -232,6 +253,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminFamiliasRoute: AuthenticatedAdminFamiliasRoute,
   AuthenticatedAdminFornecedoresRoute: AuthenticatedAdminFornecedoresRoute,
   AuthenticatedAdminReservasRoute: AuthenticatedAdminReservasRoute,
   AuthenticatedAdminStockRoute: AuthenticatedAdminStockRoute,
