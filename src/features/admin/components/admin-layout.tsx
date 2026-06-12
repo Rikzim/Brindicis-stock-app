@@ -28,6 +28,29 @@ function getImageUrl(path?: string | null): string | undefined {
   return `${API_URL}${path}`;
 }
 
+const navItems = [
+  {
+    name: "Dashboard",
+    path: "/admin",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Stock",
+    path: "/admin/stock",
+    icon: Layers,
+  },
+  {
+    name: "Reservas",
+    path: "/admin/reservas",
+    icon: FileText,
+  },
+  {
+    name: "Fornecedores",
+    path: "/admin/fornecedores",
+    icon: Briefcase,
+  },
+];
+
 export function AdminLayout() {
   const user = useAuthStore((s) => s.user);
   const reset = useAuthStore((s) => s.reset);
@@ -47,29 +70,6 @@ export function AdminLayout() {
     setShowProfile(false);
     navigate({ to: "/sign-in" });
   };
-
-  const navItems = [
-    {
-      name: "Dashboard",
-      path: "/admin",
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Stock",
-      path: "/admin/stock",
-      icon: Layers,
-    },
-    {
-      name: "Reservas",
-      path: "/admin/reservas",
-      icon: FileText,
-    },
-    {
-      name: "Fornecedores",
-      path: "/admin/fornecedores",
-      icon: Briefcase,
-    },
-  ];
 
   return (
     <div className="flex h-screen flex-col bg-[#F3F4F6] p-2 gap-2 transition-colors duration-250 dark:bg-slate-950">
@@ -147,6 +147,7 @@ export function AdminLayout() {
                 </div>
                 <button
                   type="button"
+                  aria-label="Alternar modo escuro"
                   onClick={toggleTheme}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none dark:border-transparent ${
                     theme === "dark" ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-800"

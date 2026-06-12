@@ -67,10 +67,8 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
       </div>
 
       <div className="flex w-[280px] shrink-0 items-center justify-end gap-3">
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/admin" })}
-          className="text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg p-2 transition-colors cursor-pointer dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
+        <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/admin" })}
+          className="text-slate-500 dark:text-slate-400"
           title="Área Administrativa"
         >
           <ShieldCheck className="size-5" />
