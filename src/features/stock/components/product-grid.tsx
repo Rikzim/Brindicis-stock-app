@@ -59,7 +59,7 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
 
       <div className="mt-auto flex items-center justify-between border-t border-slate-100 px-6 py-4 bg-white dark:bg-slate-900 dark:border-slate-800/80">
         <div className="flex items-center gap-2">
-          <button className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60">
+          <button type="button" className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/60">
             <span>{ITEMS_PER_PAGE}</span>
             <ChevronDown className="size-3 text-slate-400 dark:text-slate-500" />
           </button>
@@ -72,6 +72,7 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
           </span>
           <div className="flex items-center gap-1.5">
             <button
+              type="button"
               disabled={safePage <= 1}
               onClick={() => setPage(1)}
               className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"
@@ -79,16 +80,18 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
               <ChevronsLeft className="size-3.5" />
             </button>
             <button
+              type="button"
               disabled={safePage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"
             >
               <ChevronLeft className="size-3.5" />
             </button>
-            <button className="flex size-8 items-center justify-center rounded-lg bg-blue-600 text-xs font-semibold text-white cursor-pointer shadow-xs">
+            <button type="button" className="flex size-8 items-center justify-center rounded-lg bg-blue-600 text-xs font-semibold text-white cursor-pointer shadow-xs">
               {safePage}
             </button>
             <button
+              type="button"
               disabled={safePage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"
@@ -96,6 +99,7 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
               <ChevronRight className="size-3.5" />
             </button>
             <button
+              type="button"
               disabled={safePage >= totalPages}
               onClick={() => setPage(totalPages)}
               className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-800/60"

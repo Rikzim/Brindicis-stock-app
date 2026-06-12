@@ -13,12 +13,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-  InputOTPSeparator,
-} from "@/components/ui/input-otp";
+import { InputOTP } from "@/components/ui/input-otp";
+import { InputOTPGroup } from "@/components/ui/input-otp-group";
+import { InputOTPSlot } from "@/components/ui/input-otp-slot";
+import { InputOTPSeparator } from "@/components/ui/input-otp-separator";
 
 const formSchema = z.object({
   otp: z

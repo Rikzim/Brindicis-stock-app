@@ -68,6 +68,7 @@ export function ProductReservationsPanel({
           </h2>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="flex size-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-450 hover:text-slate-650 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
         >

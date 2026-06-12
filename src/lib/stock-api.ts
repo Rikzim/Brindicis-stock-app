@@ -1,33 +1,14 @@
 import { apiClient } from "./api-client";
-import type { ProductStock, StockCategory, StockFamily, StockReservation } from "./stock-types";
+import type { ProductStock, StockFamily, StockReservation } from "./stock-types";
 
 export async function getProducts(): Promise<ProductStock[]> {
   const { data } = await apiClient.get<{ products: ProductStock[] }>("/api/getProducts");
   return data.products;
 }
 
-export async function getProduct(id: number): Promise<ProductStock> {
-  const { data } = await apiClient.get<ProductStock>("/api/getProduct", {
-    params: { id },
-  });
-  return data;
-}
-
-export async function getCategories(): Promise<StockCategory[]> {
-  const { data } = await apiClient.get<StockCategory[]>("/api/getCategories");
-  return data;
-}
-
 export async function getFamilies(): Promise<StockFamily[]> {
   const { data } = await apiClient.get<{ families: StockFamily[] }>("/api/getFamilies");
   return data.families;
-}
-
-export async function getProductVariants(productId: number) {
-  const { data } = await apiClient.get<{ productVariants: unknown[] }>("/api/getProductVariants", {
-    params: { id_product: productId },
-  });
-  return data.productVariants;
 }
 
 export async function getReservations(): Promise<StockReservation[]> {

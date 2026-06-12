@@ -34,7 +34,3 @@ export async function getMe(): Promise<SafeUser> {
   const { data } = await apiClient.get<SafeUser>("/auth/me");
   return data;
 }
-
-export async function logout(): Promise<void> {
-  await apiClient.post("/auth/logout");
-}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Image,
   ChevronLeft,
@@ -8,7 +8,8 @@ import {
   Calendar,
   Plus,
 } from "@/lib/icon-map";
-import type { ProductStock } from "@/lib/stock-types";
+import type { ProductStock, ProductVariantStock } from "@/lib/stock-types";
+import { Button } from "@/components/ui/button";
 import { CreateReservationPanel } from "./create-reservation-modal";
 import { ProductReservationsPanel } from "./product-reservations-panel";
 
@@ -51,9 +52,39 @@ function formatDate(dateStr: string | null | undefined): string {
 
 export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps) {
   const [view, setView] = useState<"details" | "reserving" | "reservations">("details");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const filteredVariants: ProductVariantStock[] = useMemo(() => {
+    const variants = product.variants || [];
+    return variants.filter((v) => {
+      if (selectedColor && v.color !== selectedColor) return false;
+      if (selectedSize && v.size !== selectedSize) return false;
+      return true;
+    });
+  }, [product.variants, selectedColor, selectedSize]);
+
+  const filteredAvailable = useMemo(() => {
+    return filteredVariants.reduce((sum, v) => sum + (v.quantity - v.reserved), 0);
+  }, [filteredVariants]);
+
+  const TABLE_ROW_H = 28;
+  const tableNeedsScroll = filteredVariants.length > 0 &&
+    (26 + filteredVariants.length * TABLE_ROW_H) > 160;
+
+  const images = product.images || [];
+  const currentImage = images[currentImageIndex] ?? null;
+  const hasImages = images.length > 0;
+
+  const goPrevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+  const goNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
   const statusInfo = STATUS_MAP[product.status] ?? { label: "Desconhecido", color: "text-slate-500" };
-  const firstImage = product.images?.[0];
-  const hasImages = product.images && product.images.length > 0;
 
   return (
     <div className="flex h-full w-[460px] shrink-0 flex-col overflow-hidden bg-white border border-slate-200/60 rounded-2xl shadow-xs relative dark:bg-slate-900 dark:border-slate-800/80">
@@ -71,81 +102,100 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
       ) : (
         <>
           <button
+            type="button"
             onClick={onClose}
             className="absolute top-3 right-3 z-10 flex size-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-450 hover:text-slate-650 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
           >
             <X className="size-3.5" />
           </button>
 
-          <div className="flex-1 overflow-y-auto pb-24">
-            <div className="relative flex aspect-[16/7] w-full flex-col items-center justify-center bg-slate-50 border-b border-slate-100 dark:bg-slate-950 dark:border-slate-850">
-              {firstImage ? (
-                <img
-                  src={getImageUrl(firstImage.url)}
-                  alt={product.name}
-                  className="size-full object-contain"
-                />
-              ) : (
-                <>
-                  <Image className="text-slate-300 size-12 mb-1 dark:text-slate-600" />
-                  <span className="text-[10px] font-semibold text-slate-400 tracking-wider dark:text-slate-500">
-                    IMAGEM DO PRODUTO
-                  </span>
-                </>
-              )}
+          <div className="flex-1 overflow-hidden">
+            <div className="p-5 flex flex-col gap-5 h-full">
+              <div className="flex gap-4 pb-4 border-b border-slate-100 shrink-0 dark:border-slate-800/60">
+                <div className="relative flex aspect-square w-[120px] shrink-0 items-center justify-center bg-slate-50 rounded-xl overflow-hidden dark:bg-slate-950">
+                  {currentImage ? (
+                    <img
+                      src={getImageUrl(currentImage.url)}
+                      alt={product.name}
+                      className="size-full object-contain"
+                    />
+                  ) : (
+                    <>
+                      <Image className="text-slate-300 size-8 mb-0.5 dark:text-slate-600" />
+                      <span className="text-[8px] font-semibold text-slate-400 tracking-wider absolute bottom-2 dark:text-slate-500">
+                        IMAGEM
+                      </span>
+                    </>
+                  )}
 
-              {hasImages && product.images.length > 1 && (
-                <>
-                  <button className="absolute left-3 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-md transition-colors">
-                    <ChevronLeft className="size-4" />
-                  </button>
-                  <button className="absolute right-3 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-lg bg-blue-650 hover:bg-blue-755 text-white cursor-pointer shadow-md transition-colors">
-                    <ChevronRight className="size-4" />
-                  </button>
-                  <div className="absolute bottom-3 flex gap-1.5">
-                    {product.images.map((_, i) => (
-                      <div
-                        key={i}
-                        className={`size-1.5 rounded-full ${i === 0 ? "bg-blue-600 dark:bg-blue-500" : "bg-slate-200 dark:bg-slate-800"}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="p-5 flex flex-col gap-5">
-              <div className="flex flex-col gap-1 border-b border-slate-100 pb-4 dark:border-slate-800/60">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">
-                  REF. {product.ref}
-                </span>
-                <h2 className="text-xl font-bold text-slate-800 uppercase leading-tight dark:text-slate-100">
-                  {product.name}
-                </h2>
-                {product.category && (
-                  <p className="text-xs text-slate-500 font-medium dark:text-slate-400">
-                    {product.category.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 border-b border-slate-100 pb-4 dark:border-slate-800/60">
-                <div className="inline-flex items-center rounded-md bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white shadow-2xs dark:bg-blue-650">
-                  {product.quantity} <span className="font-normal opacity-90 ml-1">unidades</span>
+                  {hasImages && images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={goPrevImage}
+                        className="absolute left-0.5 top-1/2 -translate-y-1/2 size-5 bg-white/80 hover:bg-white text-slate-700 shadow-xs rounded-md"
+                      >
+                        <ChevronLeft className="size-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={goNextImage}
+                        className="absolute right-0.5 top-1/2 -translate-y-1/2 size-5 bg-white/80 hover:bg-white text-slate-700 shadow-xs rounded-md"
+                      >
+                        <ChevronRight className="size-3" />
+                      </Button>
+                      <div className="absolute bottom-1.5 flex gap-1">
+                        {images.map((_, i) => (
+                          <div
+                            key={i}
+                            className={`size-1 rounded-full ${i === currentImageIndex ? "bg-blue-600 dark:bg-blue-500" : "bg-slate-200 dark:bg-slate-800"}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  {product.pvp.toFixed(2)} €{" "}
-                  <span className="text-[10px] font-semibold text-slate-400 ml-0.5 dark:text-slate-500">PVP</span>
-                </span>
+
+                <div className="flex flex-col justify-between min-w-0 flex-1 py-0.5">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">
+                      REF. {product.ref}
+                    </span>
+                    <h2 className="text-lg font-bold text-slate-800 uppercase leading-tight dark:text-slate-100 line-clamp-2">
+                      {product.name}
+                    </h2>
+                    {product.category && (
+                      <p className="text-xs text-slate-500 font-medium dark:text-slate-400">
+                        {product.category.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="inline-flex items-center rounded-md bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white shadow-2xs dark:bg-blue-650">
+                      {product.quantity} <span className="font-normal opacity-90 ml-1">unidades</span>
+                    </div>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {product.pvp.toFixed(2)} €{" "}
+                      <span className="text-[10px] font-semibold text-slate-400 ml-0.5 dark:text-slate-500">PVP</span>
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 border-b border-slate-100 pb-4 dark:border-slate-800/60">
+              <div className="grid grid-cols-3 gap-3 border-b border-slate-100 pb-4 dark:border-slate-800/60 shrink-0">
                 {product.colors && product.colors.length > 0 && (
                   <div className="flex flex-col">
                     <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1 dark:text-slate-500">
                       COR
                     </span>
-                    <select className="flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer shadow-3xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/50 appearance-none">
+                    <select
+                      value={selectedColor}
+                      onChange={(e) => setSelectedColor(e.target.value)}
+                      className="flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer shadow-3xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/50 appearance-none"
+                    >
+                      <option value="">Todas as cores</option>
                       {product.colors.map((c) => (
                         <option key={c.name} value={c.name}>{c.name}</option>
                       ))}
@@ -158,7 +208,12 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                     <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1 dark:text-slate-500">
                       TAMANHO
                     </span>
-                    <select className="flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer shadow-3xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/50 appearance-none">
+                    <select
+                      value={selectedSize}
+                      onChange={(e) => setSelectedSize(e.target.value)}
+                      className="flex h-8 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer shadow-3xs dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/50 appearance-none"
+                    >
+                      <option value="">Todos os tamanhos</option>
                       {product.sizes.map((s) => (
                         <option key={s.size} value={s.size}>{s.size}</option>
                       ))}
@@ -170,70 +225,89 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
                   <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1 dark:text-slate-500">
                     DISPONIBILIDADE
                   </span>
-                  <span className="flex h-8 items-center text-xs font-semibold gap-1">
+                  <span className="flex flex-col h-8 items-start text-xs font-semibold gap-0">
                     <span className={statusInfo.color}>{statusInfo.label}</span>
                     <span className="text-slate-400 font-normal text-[10px] dark:text-slate-500">
-                      ({product.quantity} un.)
+                      {filteredAvailable > 0 || (!selectedColor && !selectedSize)
+                        ? `${filteredAvailable} un. disponíveis`
+                        : "Sem stock disponível"}
+                      {selectedColor && !selectedSize ? " para esta cor" : ""}
+                      {selectedSize && !selectedColor ? " para este tamanho" : ""}
+                      {selectedColor && selectedSize ? " para esta combinação" : ""}
                     </span>
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-b border-slate-100 pb-4 dark:border-slate-800/60">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">REFERÊNCIA</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.ref}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">CX.</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.cx || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">NOME</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.name}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">NÚMERO</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.number ?? "N/A"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">QUANTIDADE</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.quantity}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">FAMÍLIA</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.family?.name || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">GAVETA</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.drawer || "—"}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">P.C.</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.pc.toFixed(2)} €</span>
-                </div>
-              </div>
-
-              {product.description && (
-                <div className="flex flex-col gap-1.5 border-b border-slate-100 pb-4 dark:border-slate-800/60">
-                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
-                    <FileText className="size-4 shrink-0" />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">DESCRIÇÃO</span>
+              {filteredVariants.length > 0 && (
+                <div
+                  className={`flex flex-col ${tableNeedsScroll ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}
+                >
+                  <div className="grid grid-cols-[1.2fr_1fr_0.8fr] text-[10px] font-bold text-slate-400/90 tracking-wider shrink-0 pb-1.5 border-b border-slate-200 dark:border-slate-700/60">
+                    <span>Cor</span>
+                    <span>Tamanho</span>
+                    <span>Disponível</span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium dark:text-slate-300">
-                    {product.description}
-                  </p>
+                  {filteredVariants.map((v) => {
+                    const available = v.quantity - v.reserved;
+                    return (
+                      <div
+                        key={v.id}
+                        className="grid grid-cols-[1.2fr_1fr_0.8fr] py-1.5 text-xs text-slate-700 border-b border-slate-100 last:border-b-0 dark:text-slate-300 dark:border-slate-800/20"
+                      >
+                        <span className="font-medium">{v.color}</span>
+                        <span className="text-slate-500 dark:text-slate-400">{v.size || "—"}</span>
+                        <span className={`font-semibold ${available > 0 ? "text-emerald-600 dark:text-emerald-500" : "text-red-500"}`}>
+                          {available}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
-              <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 font-medium dark:text-slate-500">
-                <p>
+              <div className="mt-auto shrink-0 flex flex-col gap-5 pb-14">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-b border-slate-100 pb-4 dark:border-slate-800/60">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">CX.</span>
+                    <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.cx || "—"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">NÚMERO</span>
+                    <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.number ?? "N/A"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">FAMÍLIA</span>
+                    <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.family?.name || "—"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">GAVETA</span>
+                    <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.drawer || "—"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider dark:text-slate-500">P.C.</span>
+                    <span className="text-xs font-semibold text-slate-700 mt-0.5 dark:text-slate-300">{product.pc.toFixed(2)} €</span>
+                  </div>
+                </div>
+
+                {product.description && (
+                  <div className="flex flex-col gap-1.5 border-b border-slate-100 pb-4 dark:border-slate-800/60">
+                    <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                      <FileText className="size-4 shrink-0" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">DESCRIÇÃO</span>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium dark:text-slate-300">
+                      {product.description}
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-[10px] text-slate-400 font-medium dark:text-slate-500">
                   Criado em{" "}
                   <span className="font-semibold text-slate-500 dark:text-slate-400">
                     {formatDate(product.createdAt)}
                   </span>
-                </p>
-                <p>
+                  <span className="mx-1.5">·</span>
                   Atualizado em{" "}
                   <span className="font-semibold text-slate-500 dark:text-slate-400">
                     {formatDate(product.updatedAt)}
@@ -245,6 +319,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
 
           <div className="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 grid grid-cols-2 gap-3 dark:border-slate-800 dark:bg-slate-900">
             <button
+              type="button"
               onClick={() => setView("reservations")}
               className="flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
             >
@@ -252,6 +327,7 @@ export function ProductDetailPanel({ product, onClose }: ProductDetailPanelProps
               <span>Ver Reservas</span>
             </button>
             <button
+              type="button"
               onClick={() => setView("reserving")}
               className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-md transition-colors"
             >

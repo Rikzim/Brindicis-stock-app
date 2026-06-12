@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Logo } from "@/assets/logo";
 import { Search, Settings, ShieldCheck, LogOut } from "@/lib/icon-map";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
+import { AvatarImage } from "@/components/ui/avatar-image";
+import { AvatarFallback } from "@/components/ui/avatar-fallback";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/stores/auth-store";
@@ -62,16 +64,18 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
       </div>
 
       <div className="flex w-[280px] shrink-0 items-center justify-end gap-3">
-        <button className="text-slate-500 hover:text-slate-855 hover:bg-slate-105 rounded-lg p-2 transition-colors cursor-pointer dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800">
+        <button type="button" className="text-slate-500 hover:text-slate-855 hover:bg-slate-105 rounded-lg p-2 transition-colors cursor-pointer dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800">
           <ShieldCheck className="size-5" />
         </button>
         <button
+          type="button"
           onClick={() => setShowSettings(!showSettings)}
           className="text-slate-500 hover:text-slate-855 hover:bg-slate-105 rounded-lg p-2 transition-colors cursor-pointer dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800"
         >
           <Settings className="size-5" />
         </button>
         <button
+          type="button"
           onClick={() => setShowProfile(!showProfile)}
           className="rounded-full cursor-pointer focus:outline-none ring-1 ring-slate-105 dark:ring-slate-800"
         >
@@ -89,7 +93,7 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
 
       {showSettings && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowSettings(false)} />
+          <div className="fixed inset-0 z-40" role="presentation" onClick={() => setShowSettings(false)} onKeyDown={(e) => e.key === "Escape" && setShowSettings(false)} />
           <div className="absolute right-6 top-18 z-50 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-lg transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 flex flex-col gap-4">
             <h4 className="text-sm font-semibold text-slate-850 dark:text-slate-100 border-b border-slate-100 pb-2 dark:border-slate-800/80">
               Configurações
@@ -100,6 +104,8 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
                 <span className="text-[10px] text-slate-400">Alterar tema do sistema</span>
               </div>
               <button
+                type="button"
+                aria-label="Alternar modo escuro"
                 onClick={toggleTheme}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none dark:border-transparent ${
                   theme === "dark" ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-800"
@@ -118,6 +124,8 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
                 <span className="text-[10px] text-slate-400">Mudar posição do card de detalhes</span>
               </div>
               <button
+                type="button"
+                aria-label="Alternar posição do painel"
                 onClick={togglePanelPosition}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none dark:border-transparent ${
                   panelPosition === "left" ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-800"
@@ -136,7 +144,7 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
 
       {showProfile && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />
+          <div className="fixed inset-0 z-40" role="presentation" onClick={() => setShowProfile(false)} onKeyDown={(e) => e.key === "Escape" && setShowProfile(false)} />
           <div className="absolute right-6 top-18 z-50 w-56 rounded-xl border border-slate-200/60 bg-white shadow-lg transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
             <div className="px-4 py-3.5 flex flex-col border-b border-slate-100 dark:border-slate-800/80">
               <span className="text-sm font-bold text-slate-850 dark:text-slate-100">
@@ -147,6 +155,7 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
               </span>
             </div>
             <button
+              type="button"
               onClick={() => {
                 reset();
                 setShowProfile(false);

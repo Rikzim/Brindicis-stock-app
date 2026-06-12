@@ -32,6 +32,7 @@ export function ProductCard({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "flex items-center gap-4.5 rounded-xl border border-slate-200/70 bg-white p-4.5 text-left transition-all hover:bg-slate-50 cursor-pointer shadow-2xs dark:border-slate-800/80 dark:bg-slate-900 dark:hover:bg-slate-800/40",

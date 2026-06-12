@@ -3,10 +3,9 @@ import { cn } from "@/lib/utils";
 import { Eye, EyeOff } from "@/lib/icon-map";
 import { Input } from "@/components/ui/input";
 
-const PasswordInput = React.forwardRef<
-  HTMLInputElement,
-  React.ComponentProps<"input">
->(({ className, ...props }, ref) => {
+type PasswordInputProps = React.ComponentProps<"input">;
+
+const PasswordInput = ({ className, ref, ...props }: PasswordInputProps) => {
   const [showPassword, setShowPassword] = React.useState(false);
 
   return (
@@ -27,7 +26,7 @@ const PasswordInput = React.forwardRef<
       </button>
     </div>
   );
-});
+};
 PasswordInput.displayName = "PasswordInput";
 
 export { PasswordInput };

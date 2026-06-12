@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, type Dispatch, type SetStateAction } from "react";
 import { X, Info, ShieldCheck, ChevronLeft } from "@/lib/icon-map";
 import type { ProductStock } from "@/lib/stock-types";
 import { toast } from "sonner";
@@ -13,6 +13,170 @@ type CreateReservationPanelProps = {
   product: ProductStock;
   onClose: () => void;
 };
+
+type ColorRowListProps = {
+  product: ProductStock;
+  quantities: Record<string, number>;
+  onQuantityChange: (color: string, delta: number) => void;
+  getAvailableForColor: (colorName: string) => number;
+};
+
+function ColorRowList({ product, quantities, onQuantityChange, getAvailableForColor }: ColorRowListProps) {
+  if (product.colors && product.colors.length > 0) {
+    return product.colors.map((c) => {
+      const qty = quantities[c.name] || 0;
+      const available = getAvailableForColor(c.name);
+
+      return (
+        <div key={c.name} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0 dark:border-slate-800/40">
+          <div className="flex items-center">
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {c.name}
+            </span>
+          </div>
+          <div className="flex items-center gap-10">
+            <div className="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+              <button
+                type="button"
+                onClick={() => onQuantityChange(c.name, -1)}
+                className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-medium dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
+              >
+                —
+              </button>
+              <span className="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
+                {qty}
+              </span>
+              <button
+                type="button"
+                onClick={() => onQuantityChange(c.name, 1)}
+                className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
+              >
+                +
+              </button>
+            </div>
+            <span className="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
+              {available}
+            </span>
+          </div>
+        </div>
+      );
+    });
+  }
+
+  const qty = quantities["default"] || 0;
+  const available = getAvailableForColor("default");
+
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center">
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Geral</span>
+      </div>
+      <div className="flex items-center gap-10">
+        <div className="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+          <button
+            type="button"
+            onClick={() => onQuantityChange("default", -1)}
+            className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
+          >
+            —
+          </button>
+          <span className="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
+            {qty}
+          </span>
+          <button
+            type="button"
+            onClick={() => onQuantityChange("default", 1)}
+            className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
+          >
+            +
+          </button>
+        </div>
+        <span className="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
+          {available}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+type ReservationFormFieldsProps = {
+  formState: { comercial: string; encomenda: string; mensagem: string; orcamento: boolean };
+  setFormState: Dispatch<SetStateAction<{ comercial: string; encomenda: string; mensagem: string; orcamento: boolean }>>;
+  comercialOptions: { value: string; label: string }[];
+  encomendaOptions: { value: string; label: string }[];
+};
+
+function ReservationFormFields({
+  formState,
+  setFormState,
+  comercialOptions, encomendaOptions,
+}: ReservationFormFieldsProps) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="comercial" className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+          COMERCIAL
+        </label>
+        <SearchableSelect
+          id="comercial"
+          value={formState.comercial}
+          onValueChange={(v) => setFormState((s) => ({ ...s, comercial: v }))}
+          options={comercialOptions}
+          placeholder="Selecionar comercial"
+          searchPlaceholder="Pesquisar comercial..."
+          emptyMessage="Nenhum comercial encontrado. Digite para adicionar."
+          allowCustom={true}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="encomenda" className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+          Nº ENCOMENDA
+        </label>
+        <SearchableSelect
+          id="encomenda"
+          value={formState.encomenda}
+          onValueChange={(v) => setFormState((s) => ({ ...s, encomenda: v }))}
+          options={encomendaOptions}
+          placeholder="Selecionar encomenda"
+          searchPlaceholder="Pesquisar encomenda..."
+          emptyMessage="Nenhuma encomenda encontrada. Digite para adicionar."
+          allowCustom={true}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="mensagem" className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+          MENSAGEM
+        </label>
+        <textarea
+          id="mensagem"
+          aria-label="Mensagem"
+          value={formState.mensagem}
+          onChange={(e) => setFormState((s) => ({ ...s, mensagem: e.target.value }))}
+          placeholder="Adicionar mensagem..."
+          className="h-22 w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-300 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all resize-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-700"
+        />
+      </div>
+
+      <div className="flex items-center gap-2.5 py-1">
+        <input
+          type="checkbox"
+          id="orcamento"
+          checked={formState.orcamento}
+          onChange={(e) => setFormState((s) => ({ ...s, orcamento: e.target.checked }))}
+          className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+        />
+        <label
+          htmlFor="orcamento"
+          className="text-sm font-semibold text-slate-750 dark:text-slate-200 cursor-pointer select-none"
+        >
+          Orçamento
+        </label>
+      </div>
+    </div>
+  );
+}
 
 
 export function CreateReservationPanel({ product, onClose }: CreateReservationPanelProps) {
@@ -62,10 +226,12 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
     return initial;
   });
 
-  const [comercial, setComercial] = useState(() => user?.name || "");
-  const [encomenda, setEncomenda] = useState("—");
-  const [mensagem, setMensagem] = useState("");
-  const [orcamento, setOrcamento] = useState(false);
+  const [formState, setFormState] = useState({
+    comercial: user?.name || "",
+    encomenda: "—",
+    mensagem: "",
+    orcamento: false,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getAvailableForColor = (colorName: string) => {
@@ -97,7 +263,7 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
       return;
     }
 
-    if (!comercial.trim()) {
+    if (!formState.comercial.trim()) {
       toast.error("O campo Comercial é obrigatório.");
       return;
     }
@@ -105,21 +271,23 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
     setIsSubmitting(false);
     const reservationPromises: Promise<unknown>[] = [];
 
+    const variantByColor = new Map(product.variants?.map((v) => [v.color, v]));
+
     try {
       setIsSubmitting(true);
       for (const [colorName, qty] of Object.entries(quantities)) {
         if (qty > 0) {
-          const variant = product.variants?.find((v) => v.color === colorName);
+          const variant = variantByColor.get(colorName);
 
           const payload = {
-            name: comercial,
+            name: formState.comercial,
             id_product: product.id,
             quantity: qty,
             color: colorName === "default" ? "" : colorName,
             size: variant?.size || undefined,
-            message: mensagem || undefined,
-            order: (encomenda === "—" || !encomenda) ? undefined : encomenda,
-            proposal: orcamento ? 1 : 0,
+            message: formState.mensagem || undefined,
+            order: (formState.encomenda === "—" || !formState.encomenda) ? undefined : formState.encomenda,
+            proposal: formState.orcamento ? 1 : 0,
           };
 
           reservationPromises.push(createReservation(payload));
@@ -138,84 +306,6 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
     }
   };
 
-  const renderColorRows = () => {
-    if (product.colors && product.colors.length > 0) {
-      return product.colors.map((c) => {
-        const qty = quantities[c.name] || 0;
-        const available = getAvailableForColor(c.name);
-
-        return (
-          <div key={c.name} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0 dark:border-slate-800/40">
-            <div className="flex items-center">
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {c.name}
-              </span>
-            </div>
-            <div className="flex items-center gap-10">
-              <div className="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
-                <button
-                  type="button"
-                  onClick={() => handleQuantityChange(c.name, -1)}
-                  className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-medium dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
-                >
-                  —
-                </button>
-                <span className="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
-                  {qty}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleQuantityChange(c.name, 1)}
-                  className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
-                >
-                  +
-                </button>
-              </div>
-              <span className="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
-                {available}
-              </span>
-            </div>
-          </div>
-        );
-      });
-    }
-
-    const qty = quantities["default"] || 0;
-    const available = getAvailableForColor("default");
-
-    return (
-      <div className="flex items-center justify-between py-2">
-        <div className="flex items-center">
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Geral</span>
-        </div>
-        <div className="flex items-center gap-10">
-          <div className="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
-            <button
-              type="button"
-              onClick={() => handleQuantityChange("default", -1)}
-              className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
-            >
-              —
-            </button>
-            <span className="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
-              {qty}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleQuantityChange("default", 1)}
-              className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
-            >
-              +
-            </button>
-          </div>
-          <span className="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
-            {available}
-          </span>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="flex h-full w-full flex-col bg-white dark:bg-slate-900 animate-in fade-in duration-200">
       {/* Header */}
@@ -229,6 +319,7 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
           </h2>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="flex size-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-50 cursor-pointer shadow-3xs transition-colors dark:bg-slate-950 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
         >
@@ -255,76 +346,24 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
 
           {/* Rows */}
           <div className="flex flex-col max-h-[160px] overflow-y-auto pr-1">
-            {renderColorRows()}
+            <ColorRowList
+              product={product}
+              quantities={quantities}
+              onQuantityChange={handleQuantityChange}
+              getAvailableForColor={getAvailableForColor}
+            />
           </div>
         </div>
 
         <div className="border-t border-slate-100/80 dark:border-slate-800/40" />
 
         {/* Form Fields */}
-        <div className="flex flex-col gap-4">
-          {/* Comercial */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-              COMERCIAL
-            </label>
-            <SearchableSelect
-              value={comercial}
-              onValueChange={setComercial}
-              options={comercialOptions}
-              placeholder="Selecionar comercial"
-              searchPlaceholder="Pesquisar comercial..."
-              emptyMessage="Nenhum comercial encontrado. Digite para adicionar."
-              allowCustom={true}
-            />
-          </div>
-
-          {/* Nº Encomenda */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-              Nº ENCOMENDA
-            </label>
-            <SearchableSelect
-              value={encomenda}
-              onValueChange={setEncomenda}
-              options={encomendaOptions}
-              placeholder="Selecionar encomenda"
-              searchPlaceholder="Pesquisar encomenda..."
-              emptyMessage="Nenhuma encomenda encontrada. Digite para adicionar."
-              allowCustom={true}
-            />
-          </div>
-
-          {/* Mensagem */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-              MENSAGEM
-            </label>
-            <textarea
-              value={mensagem}
-              onChange={(e) => setMensagem(e.target.value)}
-              placeholder="Adicionar mensagem..."
-              className="h-22 w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-300 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all resize-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-700"
-            />
-          </div>
-
-          {/* Orçamento Checkbox */}
-          <div className="flex items-center gap-2.5 py-1">
-            <input
-              type="checkbox"
-              id="orcamento"
-              checked={orcamento}
-              onChange={(e) => setOrcamento(e.target.checked)}
-              className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
-            />
-            <label
-              htmlFor="orcamento"
-              className="text-sm font-semibold text-slate-750 dark:text-slate-200 cursor-pointer select-none"
-            >
-              Orçamento
-            </label>
-          </div>
-        </div>
+        <ReservationFormFields
+          formState={formState}
+          setFormState={setFormState}
+          comercialOptions={comercialOptions}
+          encomendaOptions={encomendaOptions}
+        />
 
         {/* Helper note */}
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400/90 dark:text-slate-500">
