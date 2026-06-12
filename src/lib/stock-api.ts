@@ -11,6 +11,18 @@ export async function getFamilies(): Promise<StockFamily[]> {
   return data.families;
 }
 
+export async function createFamily(data: { name: string; status?: number }) {
+  return apiClient.post("/api/create-family", data);
+}
+
+export async function updateFamily(data: { id: number; name?: string; status?: number }) {
+  return apiClient.put("/api/edit-family", data);
+}
+
+export async function deleteFamily(id: number) {
+  return apiClient.delete("/api/delete-family", { data: { id } });
+}
+
 export async function getReservations(): Promise<StockReservation[]> {
   const { data } = await apiClient.get<any>("/api/getReservations");
   if (Array.isArray(data)) return data;

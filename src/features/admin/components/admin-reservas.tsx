@@ -219,9 +219,6 @@ export function AdminReservas() {
 
       <DataTable columns={columns} data={filteredReservations} isLoading={loadingReservations}
         loadingMessage="A carregar reservas..." emptyMessage="Sem reservas disponíveis." rowKey={(r) => r.id} />
-      <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 dark:bg-slate-950/20 dark:border-slate-800/80 shrink-0 -mt-3 rounded-b-2xl">
-        <span className="text-xs text-slate-400 dark:text-slate-500">A mostrar {filteredReservations.length} reservas...</span>
-      </div>
 
       {(crud.isAdd || crud.isEdit) && (
         <AdminModal open onClose={crud.close} title={crud.isAdd ? "Criar Nova Reserva" : "Editar Reserva"}

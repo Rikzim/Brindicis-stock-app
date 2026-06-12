@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getProducts, getFamilies } from "@/lib/stock-api";
 import { Plus, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiClient } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FormField } from "@/components/ui/form-field";
@@ -17,6 +18,26 @@ import { DetailGrid } from "@/components/ui/detail-grid";
 import { useCrudModal } from "@/hooks/use-crud-modal";
 import { getImageUrl } from "@/lib/utils";
 import { toast } from "sonner";
+
+async function downloadExport(url: string) {
+  try {
+    const response = await apiClient.get(url, { responseType: "blob" });
+    const disposition = response.headers["content-disposition"];
+    const match = disposition?.match(/filename="?(.+?)"?$/);
+    const filename = match ? match[1] : `export-${Date.now()}.xlsx`;
+    const blob = new Blob([response.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    toast.success("Ficheiro exportado com sucesso.");
+  } catch {
+    toast.error("Erro ao exportar ficheiro.");
+  }
+}
 
 interface StockRow {
   id: string; productId: number; variantId: number | null; name: string; ref: string;
@@ -174,8 +195,12 @@ export function AdminStock() {
           <Button onClick={handleAdd} className="h-10 bg-[#1D58F6] text-white hover:bg-blue-700 px-5 rounded-lg flex items-center gap-2 font-medium shadow-none">
             <Plus className="size-4" /><span>Adicionar Produto</span>
           </Button>
-          <Button variant="outline" size="sm" className="h-10 gap-1.5"><Download className="size-4" /><span>Exportar por Caixa</span></Button>
-          <Button variant="outline" size="sm" className="h-10 gap-1.5"><Download className="size-4" /><span>Exportar</span></Button>
+          <Button variant="outline" size="sm" className="h-10 gap-1.5" onClick={() => downloadExport("/exports/stock-by-cx")}>
+            <Download className="size-4" /><span>Exportar por Caixa</span>
+          </Button>
+          <Button variant="outline" size="sm" className="h-10 gap-1.5" onClick={() => downloadExport("/exports/products")}>
+            <Download className="size-4" /><span>Exportar</span>
+          </Button>
         </div>
       </PageCard>
 

@@ -1,5 +1,6 @@
-import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export type Column<T> = {
   key: string;
@@ -17,6 +18,9 @@ type DataTableProps<T> = {
   emptyMessage?: string;
   rowKey: (row: T) => string | number;
   onRowClick?: (row: T) => void;
+  pageSize?: number;
+  showPagination?: boolean;
+  pageSizeOptions?: number[];
 };
 
 export function DataTable<T>({
@@ -27,7 +31,20 @@ export function DataTable<T>({
   emptyMessage = "Sem dados disponíveis.",
   rowKey,
   onRowClick,
+  pageSize = 25,
+  showPagination = true,
+  pageSizeOptions = [25, 50, 100, 250],
 }: DataTableProps<T>) {
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(pageSize);
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(data.length / size)), [data.length, size]);
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * size;
+  const pageData = data.slice(start, start + size);
+
+  const showBar = showPagination && !isLoading && data.length > 0;
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200/60 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80 overflow-hidden flex flex-col flex-1 min-h-0">
       <div className="flex-1 overflow-y-auto overflow-x-auto min-h-0">
@@ -61,7 +78,7 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              data.map((row, i) => (
+              pageData.map((row, i) => (
                 <tr
                   key={rowKey(row)}
                   onClick={() => onRowClick?.(row)}
@@ -78,6 +95,43 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
+
+      {showBar && (
+        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-900 shrink-0">
+          <div className="flex items-center gap-2">
+            <select
+              value={size}
+              onChange={(e) => { setSize(Number(e.target.value)); setPage(1); }}
+              className="h-7 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+            <span className="text-xs text-slate-400 dark:text-slate-500">linhas por página · {data.length} registos</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-2">
+              Página {safePage} de {totalPages}
+            </span>
+            <Button variant="outline" size="icon" disabled={safePage <= 1} onClick={() => setPage(1)} className="size-7">
+              <ChevronsLeft className="size-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="size-7">
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" className="size-7 bg-blue-600 text-white hover:bg-blue-700 border-none cursor-default text-xs font-bold">
+              {safePage}
+            </Button>
+            <Button variant="outline" size="icon" disabled={safePage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="size-7">
+              <ChevronRight className="size-3.5" />
+            </Button>
+            <Button variant="outline" size="icon" disabled={safePage >= totalPages} onClick={() => setPage(totalPages)} className="size-7">
+              <ChevronsRight className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
