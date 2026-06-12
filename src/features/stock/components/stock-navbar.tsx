@@ -37,14 +37,16 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
 
   return (
     <nav className="relative flex h-16 items-center justify-between bg-white px-6 rounded-2xl border border-slate-200/60 shadow-xs transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80">
-      <Button variant="ghost" onClick={() => window.location.reload()} className="flex w-[280px] shrink-0 items-center gap-2.5 h-auto py-0 justify-start hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hover:shadow-none">
-        <div className="flex size-8 items-center justify-center bg-[#1D58F6] rounded-lg shrink-0">
-          <Logo className="h-5 w-auto" fill="#FFFFFF" />
-        </div>
-        <span className="text-base font-semibold tracking-tight text-slate-800 dark:text-slate-100">
-          Brindicis Stock
-        </span>
-      </Button>
+      <div className="flex w-[280px] shrink-0 items-center gap-2.5">
+        <Button variant="ghost" onClick={() => window.location.reload()} className="flex items-center gap-2.5 px-3 py-1.5 h-auto rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:shadow-none">
+          <div className="flex size-8 items-center justify-center bg-[#1D58F6] rounded-lg shrink-0">
+            <Logo className="h-5 w-auto" fill="#FFFFFF" />
+          </div>
+          <span className="text-base font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+            Brindicis Stock
+          </span>
+        </Button>
+      </div>
 
       <div className="relative flex flex-1 justify-center max-w-5xl">
         <div className="relative w-full max-w-4xl">

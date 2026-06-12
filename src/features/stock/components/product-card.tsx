@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 type ProductCardProps = {
   name: string;
   reference: string;
-  quantityLabel?: string;
-  colorLabel?: string;
+  quantity: number;
+  colors?: string;
   image?: string;
   isSelected?: boolean;
   onClick?: () => void;
@@ -23,8 +23,8 @@ function getImageUrl(path?: string): string | undefined {
 export function ProductCard({
   name,
   reference,
-  quantityLabel = "Quantidade",
-  colorLabel = "Cor: Azul, Preto",
+  quantity,
+  colors,
   image,
   isSelected,
   onClick,
@@ -53,8 +53,16 @@ export function ProductCard({
       </div>
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{reference}</p>
-        <p className="truncate text-xs text-slate-400 dark:text-slate-500">{quantityLabel}</p>
-        {colorLabel && <p className="truncate text-xs text-slate-400 dark:text-slate-500">{colorLabel}</p>}
+        <p className="truncate text-xs">
+          <span className="text-slate-400 dark:text-slate-500">Qtd: </span>
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">{quantity}</span>
+        </p>
+        {colors && (
+          <p className="truncate text-xs">
+            <span className="text-slate-400 dark:text-slate-500">Cor: </span>
+            <span className="text-slate-600 dark:text-slate-300">{colors}</span>
+          </p>
+        )}
       </div>
     </Button>
   );

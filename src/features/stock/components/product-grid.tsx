@@ -48,8 +48,8 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
               key={product.id}
               name={product.name}
               reference={product.ref}
-              quantityLabel={`Qtd: ${product.quantity}`}
-              colorLabel={colorNames ? `Cor: ${colorNames}` : undefined}
+              quantity={product.quantity}
+              colors={colorNames || undefined}
               image={product.images?.[0]?.url}
               isSelected={selectedId === product.id}
               onClick={() => onSelectProduct(product.id)}
