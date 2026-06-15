@@ -1,26 +1,26 @@
-import { apiClient } from "./api-client";
+import { apiClient, Routes } from "@brindicis/api-client";
 import type { ProductStock, StockFamily, StockReservation } from "./stock-types";
 
 export async function getProducts(): Promise<ProductStock[]> {
-  const { data } = await apiClient.get<{ products: ProductStock[] }>("/stock/products");
+  const { data } = await apiClient.get<{ products: ProductStock[] }>(Routes.stock.products);
   return data.products;
 }
 
 export async function getFamilies(): Promise<StockFamily[]> {
-  const { data } = await apiClient.get<{ families: StockFamily[] }>("/stock/families");
+  const { data } = await apiClient.get<{ families: StockFamily[] }>(Routes.stock.families);
   return data.families;
 }
 
 export async function createFamily(data: { name: string; status?: number }) {
-  return apiClient.post("/stock/families", data);
+  return apiClient.post(Routes.stock.families, data);
 }
 
 export async function updateFamily(id: number, data: { name?: string; status?: number }) {
-  return apiClient.patch(`/stock/families/${id}`, data);
+  return apiClient.patch(Routes.stock.familyDetail(id), data);
 }
 
 export async function deleteFamily(id: number) {
-  return apiClient.delete(`/stock/families/${id}`);
+  return apiClient.delete(Routes.stock.familyDetail(id));
 }
 
 type GetReservationsParams = {
@@ -31,7 +31,7 @@ type GetReservationsParams = {
 };
 
 export async function getReservations(params?: GetReservationsParams): Promise<StockReservation[]> {
-  const { data } = await apiClient.get<any>("/stock/reservations", { params });
+  const { data } = await apiClient.get<any>(Routes.stock.reservations, { params });
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data.reservations)) return data.reservations;
   return [];
@@ -47,17 +47,17 @@ export async function createReservation(payload: {
   proposal?: number;
   order?: string;
 }): Promise<any> {
-  const { data } = await apiClient.post<any>("/stock/reservations", payload);
+  const { data } = await apiClient.post<any>(Routes.stock.reservations, payload);
   return data;
 }
 
 export async function getUsers(): Promise<any[]> {
-  const { data } = await apiClient.get<any[]>("/users");
+  const { data } = await apiClient.get<any[]>(Routes.users.list);
   return data;
 }
 
 export async function deleteReservation(id: number): Promise<void> {
-  await apiClient.delete(`/stock/reservations/${id}`);
+  await apiClient.delete(Routes.stock.reservationDetail(id));
 }
 
 

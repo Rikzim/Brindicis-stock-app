@@ -10,7 +10,7 @@ export interface AuthUser {
   lastLogin: string | null;
   createdAt: string;
   updatedAt: string;
-  permissions: string[];
+  permissions?: string[];
 }
 
 interface AuthState {

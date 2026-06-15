@@ -58,3 +58,6 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Copied api-client package
+packages/
