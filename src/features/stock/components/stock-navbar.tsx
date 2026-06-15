@@ -29,26 +29,28 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
   const { theme, panelPosition, toggleTheme, togglePanelPosition } = useSettingsStore();
 
   return (
-    <nav className="relative flex h-16 items-center justify-between bg-white px-6 rounded-2xl border border-slate-200/60 shadow-xs transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80">
-      <div className="flex w-[280px] shrink-0 items-center gap-2.5">
-        <Button variant="ghost" onClick={() => window.location.reload()} className="flex items-center gap-2.5 px-3 py-1.5 h-auto rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:shadow-none">
-          <div className="flex size-8 items-center justify-center bg-[#1D58F6] rounded-lg shrink-0">
-            <Logo className="h-5 w-auto" fill="#FFFFFF" />
+    <nav className="relative flex h-16 items-stretch bg-white rounded-2xl border-2 border-slate-200 shadow-sm transition-colors duration-250 dark:bg-slate-900 dark:border-slate-700">
+      {/* Logo Section */}
+      <div className="flex items-center gap-2.5 pl-5 pr-6 shrink-0">
+        <button type="button" onClick={() => window.location.reload()} className="flex items-center gap-2.5 cursor-pointer">
+          <div className="flex size-8 items-center justify-center bg-[#FBBF24] rounded-lg shrink-0">
+            <Logo className="h-5 w-auto" fill="#1F2937" />
           </div>
           <span className="text-base font-semibold tracking-tight text-slate-800 dark:text-slate-100">
-            Brindicis Stock
+            Brindicis <span className="text-amber-500 dark:text-amber-400">Stock</span>
           </span>
-        </Button>
+        </button>
       </div>
 
-      <div className="relative flex flex-1 justify-center max-w-5xl">
-        <div className="relative w-full max-w-4xl">
+      {/* Search Section */}
+      <div className="relative flex flex-1 items-center px-6">
+        <div className="relative w-full">
           <Search className="text-slate-400 absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
           <Input
             placeholder="Pesquise..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-10 w-full rounded-lg border-slate-200/80 bg-slate-50/50 pl-10 pr-12 text-sm focus:bg-white focus-visible:ring-blue-500 shadow-none dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 dark:focus:bg-slate-950"
+            className="h-10 w-full rounded-lg border-slate-200/80 bg-slate-50/50 pl-10 pr-12 text-sm focus:bg-white focus-visible:ring-amber-400 shadow-none dark:bg-slate-950 dark:border-slate-800 dark:text-slate-200 dark:focus:bg-slate-950"
           />
           <Badge
             variant="outline"
@@ -59,17 +61,18 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
         </div>
       </div>
 
-      <div className="flex w-[280px] shrink-0 items-center justify-end gap-3">
+      {/* Actions Section */}
+      <div className="flex items-center gap-1 px-4 shrink-0">
         <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/admin" })}
-          className="text-slate-500 dark:text-slate-400"
+          className="text-slate-500 dark:text-slate-400 size-9"
           title="Área Administrativa"
         >
           <ShieldCheck className="size-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)} className="text-slate-500 dark:text-slate-400">
+        <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)} className="text-slate-500 dark:text-slate-400 size-9">
           <Settings className="size-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => setShowProfile(!showProfile)} className="rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-slate-300 dark:hover:ring-slate-500 transition-all">
+        <Button variant="ghost" size="icon" onClick={() => setShowProfile(!showProfile)} className="rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-slate-300 dark:hover:ring-slate-500 transition-all size-9">
           <Avatar className="size-8">
             {user?.image_path ? (
               <AvatarImage src={getImageUrl(user.image_path)} alt={user.name} />
@@ -85,21 +88,21 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
       {showSettings && (
         <>
           <div className="fixed inset-0 z-40" role="presentation" onClick={() => setShowSettings(false)} onKeyDown={(e) => e.key === "Escape" && setShowSettings(false)} />
-          <div className="absolute right-6 top-18 z-50 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-lg transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 flex flex-col gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
-            <h4 className="text-sm font-semibold text-slate-850 dark:text-slate-100 border-b border-slate-100 pb-2 dark:border-slate-800/80">
+          <div className="absolute right-4 top-[68px] z-50 w-64 rounded-2xl border-2 border-slate-200 bg-white p-4 shadow-lg transition-colors duration-250 dark:border-slate-700 dark:bg-slate-800 flex flex-col gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
+            <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-widest border-b-2 border-slate-100 pb-2 dark:border-slate-700 dark:text-slate-400">
               Configurações
             </h4>
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Modo Escuro</span>
-                <span className="text-[10px] text-slate-400">Alterar tema do sistema</span>
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Modo Escuro</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">Alterar tema do sistema</span>
               </div>
               <button
                 type="button"
                 aria-label="Alternar modo escuro"
                 onClick={toggleTheme}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none dark:border-transparent ${
-                  theme === "dark" ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-800"
+                  theme === "dark" ? "bg-amber-400" : "bg-slate-200 dark:bg-slate-700"
                 }`}
               >
                 <span
@@ -111,15 +114,15 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Painel à Esquerda</span>
-                <span className="text-[10px] text-slate-400">Mudar posição do card de detalhes</span>
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">Painel à Esquerda</span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">Mudar posição do card</span>
               </div>
               <button
                 type="button"
                 aria-label="Alternar posição do painel"
                 onClick={togglePanelPosition}
                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none dark:border-transparent ${
-                  panelPosition === "left" ? "bg-blue-600" : "bg-slate-200 dark:bg-slate-800"
+                  panelPosition === "left" ? "bg-amber-400" : "bg-slate-200 dark:bg-slate-700"
                 }`}
               >
                 <span
@@ -136,12 +139,12 @@ export function StockNavbar({ searchQuery, onSearchChange }: StockNavbarProps) {
       {showProfile && (
         <>
           <div className="fixed inset-0 z-40" role="presentation" onClick={() => setShowProfile(false)} onKeyDown={(e) => e.key === "Escape" && setShowProfile(false)} />
-          <div className="absolute right-6 top-18 z-50 w-56 rounded-xl border border-slate-200/60 bg-white shadow-lg transition-colors duration-250 dark:border-slate-800 dark:bg-slate-900 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="px-4 py-3.5 flex flex-col border-b border-slate-100 dark:border-slate-800/80">
-              <span className="text-sm font-bold text-slate-850 dark:text-slate-100">
+          <div className="absolute right-4 top-[68px] z-50 w-56 rounded-2xl border-2 border-slate-200 bg-white shadow-lg transition-colors duration-250 dark:border-slate-700 dark:bg-slate-800 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="px-4 py-3.5 flex flex-col border-b-2 border-slate-100 dark:border-slate-700">
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
                 {user?.name || "Admin"}
               </span>
-              <span className="text-xs text-slate-450 dark:text-slate-500 mt-0.5">
+              <span className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                 {user?.email || "admin@brindicis.local"}
               </span>
             </div>

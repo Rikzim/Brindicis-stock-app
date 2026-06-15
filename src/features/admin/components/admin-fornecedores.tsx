@@ -89,7 +89,7 @@ export function AdminFornecedores() {
     <div className="flex flex-col gap-3 animate-fade-in duration-200 h-full min-h-0 overflow-hidden relative">
       <PageCard className="p-6 flex flex-col gap-4 shrink-0">
         <h1 className="text-lg font-bold text-slate-800 dark:text-white">Gestão de Fornecedores</h1>
-        <Button onClick={handleOpenAdd} className="h-10 bg-[#1D58F6] text-white hover:bg-blue-700 px-5 rounded-lg flex items-center gap-2 font-medium shadow-none w-fit">
+        <Button onClick={handleOpenAdd} className="h-10 bg-[#FBBF24] text-[#1F2937] hover:bg-amber-500 px-5 rounded-lg flex items-center gap-2 font-semibold shadow-none w-fit">
           <Plus className="size-4" /><span>Adicionar Fornecedor</span>
         </Button>
       </PageCard>
@@ -101,7 +101,7 @@ export function AdminFornecedores() {
       {(activeModal === "add" || activeModal === "edit") && (
         <AdminModal open onClose={close} title={activeModal === "add" ? "Adicionar Fornecedor" : "Editar Fornecedor"}
           footer={<><Button variant="outline" onClick={close} className="h-10 px-4">Cancelar</Button>
-            <Button type="submit" form="sup-form" className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Salvar</Button></>}>
+            <Button type="submit" form="sup-form" className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Salvar</Button></>}>
           <form id="sup-form" onSubmit={handleSave} className="flex flex-col gap-4">
             <FormField label="Nome do Fornecedor" htmlFor="sup-name">
               <Input id="sup-name" required placeholder="Ex: COUTALE" value={formName} onChange={(e) => setFormName(e.target.value)} />
@@ -115,7 +115,7 @@ export function AdminFornecedores() {
       {/* View Modal */}
       {activeModal === "view" && selected && (
         <AdminModal open onClose={close} title="Detalhes do Fornecedor"
-          footer={<Button onClick={close} className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Fechar</Button>}>
+          footer={<Button onClick={close} className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Fechar</Button>}>
           <DetailGrid items={[
             { label: "Nome", value: selected.name },
             { label: "Status", value: <StatusBadge status={selected.status} /> },

@@ -8,7 +8,7 @@ type PageCardProps = {
 
 export function PageCard({ children, className }: PageCardProps) {
   return (
-    <div className={cn("bg-white rounded-2xl border border-slate-200/60 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80", className)}>
+    <div className={cn("bg-white rounded-2xl border-2 border-slate-200 shadow-sm transition-colors duration-250 dark:bg-slate-900 dark:border-slate-700", className)}>
       {children}
     </div>
   );

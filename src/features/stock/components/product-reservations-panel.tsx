@@ -143,7 +143,7 @@ export function ProductReservationsPanel({
           <span>Voltar</span>
         </Button>
 
-        <Button variant="default" onClick={onAddReservation} className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 active:scale-95">
+        <Button variant="default" onClick={onAddReservation} className="flex-1 h-11 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] font-semibold active:scale-95">
           <Plus className="size-4" />
           <span>Adicionar Reserva</span>
         </Button>

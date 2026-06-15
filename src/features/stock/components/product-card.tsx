@@ -1,7 +1,6 @@
 import { Package } from "@/lib/icon-map";
 import { cn } from "@/lib/utils";
 import { getImageUrl } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 type ProductCardProps = {
   name: string;
@@ -25,38 +24,40 @@ export function ProductCard({
   const imgSrc = getImageUrl(image);
 
   return (
-    <Button
-      variant="outline"
+    <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-4.5 rounded-xl p-4.5 text-left h-auto w-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md animate-in fade-in duration-200",
-        isSelected && "border-blue-600 ring-1 ring-blue-600 bg-blue-50/10 dark:border-blue-500 dark:ring-blue-500 dark:bg-blue-500/10",
+        "flex items-stretch rounded-2xl text-left w-full transition-all duration-200 border-2 animate-in fade-in duration-200 overflow-hidden cursor-pointer",
+        isSelected
+          ? "border-amber-400 shadow-md dark:border-amber-400"
+          : "border-slate-200 hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:hover:border-slate-600",
       )}
     >
-      <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-400/80 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-600">
+      <div className="flex w-[90px] shrink-0 items-center justify-center bg-slate-50 border-r border-slate-200 text-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-500">
         {imgSrc ? (
           <img
             src={imgSrc}
             alt={name}
-            className="size-full rounded-xl object-cover"
+            className="size-full object-cover"
           />
         ) : (
-          <Package className="size-5" />
+          <Package className="size-8" />
         )}
       </div>
-      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-        <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">{reference}</p>
-        <p className="truncate text-xs">
-          <span className="text-slate-400 dark:text-slate-500">Qtd: </span>
-          <span className="text-blue-600 dark:text-blue-400 font-semibold">{quantity}</span>
+      <div className="flex-1 flex flex-col justify-center gap-0.5 px-4 py-3 bg-white dark:bg-slate-800">
+        <p className="truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">{reference}</p>
+        <p className="truncate text-sm">
+          <span className="text-slate-500 font-semibold dark:text-slate-400">Qtd: </span>
+          <span className="text-amber-600 dark:text-amber-400 font-extrabold">{quantity}</span>
         </p>
         {colors && (
           <p className="truncate text-xs">
-            <span className="text-slate-400 dark:text-slate-500">Cor: </span>
-            <span className="text-slate-600 dark:text-slate-300">{colors}</span>
+            <span className="text-slate-500 font-semibold dark:text-slate-400">Cor: </span>
+            <span className="text-slate-700 font-medium dark:text-slate-300">{colors}</span>
           </p>
         )}
       </div>
-    </Button>
+    </button>
   );
 }

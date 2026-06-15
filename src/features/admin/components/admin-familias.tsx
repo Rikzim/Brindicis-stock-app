@@ -97,7 +97,7 @@ export function AdminFamilias() {
     <div className="flex flex-col gap-3 animate-fade-in duration-200 h-full min-h-0 overflow-hidden relative">
       <PageCard className="p-6 flex flex-col gap-4 shrink-0">
         <h1 className="text-lg font-bold text-slate-800 dark:text-white">Gestão de Famílias de Produtos</h1>
-        <Button onClick={handleOpenAdd} className="h-10 bg-[#1D58F6] text-white hover:bg-blue-700 px-5 rounded-lg flex items-center gap-2 font-medium shadow-none w-fit">
+        <Button onClick={handleOpenAdd} className="h-10 bg-[#FBBF24] text-[#1F2937] hover:bg-amber-500 px-5 rounded-lg flex items-center gap-2 font-semibold shadow-none w-fit">
           <Plus className="size-4" /><span>Adicionar Família</span>
         </Button>
       </PageCard>
@@ -109,7 +109,7 @@ export function AdminFamilias() {
       {(crud.isAdd || crud.isEdit) && (
         <AdminModal open onClose={crud.close} title={crud.isAdd ? "Adicionar Família" : "Editar Família"}
           footer={<><Button variant="outline" onClick={crud.close} className="h-10 px-4">Cancelar</Button>
-            <Button type="submit" form="fam-form" className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Salvar</Button></>}>
+            <Button type="submit" form="fam-form" className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Salvar</Button></>}>
           <form id="fam-form" onSubmit={handleSave} className="flex flex-col gap-4">
             <FormField label="Nome da Família" htmlFor="fam-name">
               <Input id="fam-name" required placeholder="Ex: TEXTIL" value={form.name} onChange={fc("name")} />
@@ -123,7 +123,7 @@ export function AdminFamilias() {
       {/* View Modal */}
       {crud.isView && crud.selected && (
         <AdminModal open onClose={crud.close} title="Detalhes da Família"
-          footer={<Button onClick={crud.close} className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Fechar</Button>}>
+          footer={<Button onClick={crud.close} className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Fechar</Button>}>
           <DetailGrid items={[
             { label: "Nome da Família", value: crud.selected.name },
             { label: "Status", value: <StatusBadge status={crud.selected.status === 1 ? "Ativo" : "Inativo"} /> },

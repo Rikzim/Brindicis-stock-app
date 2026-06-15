@@ -21,7 +21,7 @@ export function RowActions({
   return (
     <div className="flex items-center justify-end gap-1">
       {onView && (
-        <Button variant="ghost" size="icon" onClick={onView} title={viewLabel ?? "Ver"} className="size-8 text-blue-500 hover:text-blue-600">
+        <Button variant="ghost" size="icon" onClick={onView} title={viewLabel ?? "Ver"} className="size-8 text-amber-500 hover:text-amber-600">
           <Eye className="size-4" />
         </Button>
       )}

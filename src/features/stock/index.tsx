@@ -120,7 +120,7 @@ export function StockPage() {
           />
         )}
 
-        <div className="flex flex-1 flex-col bg-white rounded-2xl border border-slate-200/60 shadow-xs overflow-hidden transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80">
+        <div className="flex flex-1 flex-col bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden transition-colors duration-250 dark:bg-slate-900 dark:border-slate-700">
           <FiltersBar
             families={families}
             availableColors={availableColors}

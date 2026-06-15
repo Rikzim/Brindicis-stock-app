@@ -66,7 +66,7 @@ export function DataTable<T>({
               <tr>
                 <td colSpan={columns.length} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <Loader2 className="size-6 animate-spin text-blue-600" />
+                    <Loader2 className="size-6 animate-spin text-amber-400" />
                     <span className="text-sm text-slate-400 dark:text-slate-500">{loadingMessage}</span>
                   </div>
                 </td>
@@ -120,7 +120,7 @@ export function DataTable<T>({
             <Button variant="outline" size="icon" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="size-7">
               <ChevronLeft className="size-3.5" />
             </Button>
-            <Button variant="outline" size="icon" className="size-7 bg-blue-600 text-white hover:bg-blue-700 border-none cursor-default text-xs font-bold">
+            <Button variant="outline" size="icon" className="size-7 bg-amber-400 text-[#1F2937] hover:bg-amber-500 border-none cursor-default text-xs font-bold">
               {safePage}
             </Button>
             <Button variant="outline" size="icon" disabled={safePage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="size-7">

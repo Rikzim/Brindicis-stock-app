@@ -41,28 +41,28 @@ export function AdminDashboard() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <PageCard className="flex items-center justify-between p-6">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">Produtos em stock:</span>
+            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Produtos em stock:</span>
             <span className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{displayStock}</span>
           </div>
-          <div className="flex size-14 items-center justify-center bg-blue-50 text-blue-600 rounded-2xl dark:bg-blue-950/40 dark:text-blue-400">
+          <div className="flex size-14 items-center justify-center bg-amber-50 text-amber-600 rounded-2xl dark:bg-amber-950/40 dark:text-amber-400">
             <Archive className="size-7 stroke-[1.5]" />
           </div>
         </PageCard>
         <PageCard className="flex items-center justify-between p-6">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">Produtos Reservados:</span>
+            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Produtos Reservados:</span>
             <span className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{displayReserved}</span>
           </div>
-          <div className="flex size-14 items-center justify-center bg-blue-50 text-blue-600 rounded-2xl dark:bg-blue-950/40 dark:text-blue-400">
+          <div className="flex size-14 items-center justify-center bg-amber-50 text-amber-600 rounded-2xl dark:bg-amber-950/40 dark:text-amber-400">
             <Package className="size-7 stroke-[1.5]" />
           </div>
         </PageCard>
       </div>
 
       <PageCard className="overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-slate-100 dark:border-slate-700">
           <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Reservas Recentes</h2>
-          <Link to="/admin/reservas" className="text-xs font-medium border border-slate-200 hover:bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg transition-colors cursor-pointer dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800">
+          <Link to="/admin/reservas" className="text-xs font-bold border-2 border-slate-200 hover:bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg transition-colors cursor-pointer dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
             Ver tudo
           </Link>
         </div>

@@ -191,7 +191,7 @@ export function AdminReservas() {
       <div className="flex flex-col gap-1.5 md:col-span-2">
         <label htmlFor="res-message" className="text-xs font-semibold text-slate-500 dark:text-slate-400">Mensagem / Observações</label>
         <textarea id="res-message" value={form.message} onChange={(e) => setForm((p: any) => ({ ...p, message: e.target.value }))} placeholder="Nota ou comentário da reserva..."
-          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 min-h-[80px]" />
+          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 min-h-[80px]" />
       </div>
       {crud.isEdit && (
         <FormSelectField label="Estado da Reserva" id="res-status" value={form.status} onValueChange={fc("status")}
@@ -206,7 +206,7 @@ export function AdminReservas() {
       <PageCard className="p-6 flex flex-col gap-4 shrink-0">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold text-slate-800 dark:text-white">Gestão de Reservas</h1>
-          <Button onClick={handleOpenAdd} className="h-10 bg-[#1D58F6] text-white hover:bg-blue-700 px-5 rounded-lg flex items-center gap-2 font-medium shadow-none">
+          <Button onClick={handleOpenAdd} className="h-10 bg-[#FBBF24] text-[#1F2937] hover:bg-amber-500 px-5 rounded-lg flex items-center gap-2 font-semibold shadow-none">
             <Plus className="size-4" /><span>Criar Reserva</span>
           </Button>
         </div>
@@ -223,14 +223,14 @@ export function AdminReservas() {
       {(crud.isAdd || crud.isEdit) && (
         <AdminModal open onClose={crud.close} title={crud.isAdd ? "Criar Nova Reserva" : "Editar Reserva"}
           footer={<><Button variant="outline" onClick={crud.close} className="h-10 px-4">Cancelar</Button>
-            <Button type="submit" form="reservation-form" className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Salvar</Button></>}>
+            <Button type="submit" form="reservation-form" className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Salvar</Button></>}>
           {formContent}
         </AdminModal>
       )}
 
       {crud.isView && crud.selected && (
         <AdminModal open onClose={crud.close} title="Detalhes da Reserva"
-          footer={<Button onClick={crud.close} className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Fechar</Button>}>
+          footer={<Button onClick={crud.close} className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Fechar</Button>}>
           <DetailGrid items={[
             { label: "Comercial", value: crud.selected.name || "Sem Nome" },
             { label: "Produto (Ref)", value: `${crud.selected.product?.name || "Produto"} (${crud.selected.ref || crud.selected.product?.ref})` },

@@ -40,7 +40,7 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
 
   return (
     <div className="flex flex-1 flex-col justify-between overflow-hidden animate-in fade-in duration-300">
-      <div className="grid grid-cols-4 gap-2 p-6 overflow-y-auto">
+      <div className="grid grid-cols-4 gap-3 p-6 overflow-y-auto">
         {pageProducts.map((product) => {
           const colorNames = product.colors?.map((c) => c.name).join(", ") || "";
           return (
@@ -58,9 +58,9 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
         })}
       </div>
 
-      <div className="mt-auto flex items-center justify-end border-t border-slate-100 px-6 py-4 bg-white dark:bg-slate-900 dark:border-slate-800/80 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="mt-auto flex items-center justify-end border-t-2 border-slate-200 px-6 py-4 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="flex items-center gap-4">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
             Página {safePage} de {totalPages}
           </span>
           <div className="flex items-center gap-1.5">
@@ -69,20 +69,20 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
               size="icon"
               disabled={safePage <= 1}
               onClick={() => setPage(1)}
-              className="size-8"
+              className="size-9 border-slate-300 dark:border-slate-600"
             >
-              <ChevronsLeft className="size-3.5" />
+              <ChevronsLeft className="size-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
               disabled={safePage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="size-8"
+              className="size-9 border-slate-300 dark:border-slate-600"
             >
-              <ChevronLeft className="size-3.5" />
+              <ChevronLeft className="size-4" />
             </Button>
-            <Button variant="default" size="icon" className="size-8 bg-blue-600 hover:bg-blue-700 text-xs font-semibold cursor-default shadow-xs">
+            <Button variant="default" size="icon" className="size-9 bg-amber-400 hover:bg-amber-500 text-[#1F2937] text-sm font-extrabold cursor-default shadow-sm">
               {safePage}
             </Button>
             <Button
@@ -90,18 +90,18 @@ export function ProductGrid({ products, isLoading, selectedId, onSelectProduct }
               size="icon"
               disabled={safePage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="size-8"
+              className="size-9 border-slate-300 dark:border-slate-600"
             >
-              <ChevronRight className="size-3.5" />
+              <ChevronRight className="size-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
               disabled={safePage >= totalPages}
               onClick={() => setPage(totalPages)}
-              className="size-8"
+              className="size-9 border-slate-300 dark:border-slate-600"
             >
-              <ChevronsRight className="size-3.5" />
+              <ChevronsRight className="size-4" />
             </Button>
           </div>
         </div>

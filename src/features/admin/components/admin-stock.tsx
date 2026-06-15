@@ -192,7 +192,7 @@ export function AdminStock() {
           </FormField>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleAdd} className="h-10 bg-[#1D58F6] text-white hover:bg-blue-700 px-5 rounded-lg flex items-center gap-2 font-medium shadow-none">
+          <Button onClick={handleAdd} className="h-10 bg-[#FBBF24] text-[#1F2937] hover:bg-amber-500 px-5 rounded-lg flex items-center gap-2 font-semibold shadow-none">
             <Plus className="size-4" /><span>Adicionar Produto</span>
           </Button>
           <Button variant="outline" size="sm" className="h-10 gap-1.5" onClick={() => downloadExport("/exports/stock-by-cx")}>
@@ -211,7 +211,7 @@ export function AdminStock() {
       {(crud.isAdd || crud.isEdit) && (
         <AdminModal open onClose={crud.close} title={crud.isAdd ? "Adicionar Produto" : "Editar Produto"}
           footer={<><Button variant="outline" onClick={crud.close} className="h-10 px-4">Cancelar</Button>
-            <Button type="submit" form="product-form" className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Salvar</Button></>}>
+            <Button type="submit" form="product-form" className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Salvar</Button></>}>
           <form id="product-form" onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Referência" htmlFor="prod-ref">
               <Input id="prod-ref" required placeholder="Ex: REF-001" value={form.ref} onChange={u("ref")} />
@@ -238,7 +238,7 @@ export function AdminStock() {
       {/* View Modal */}
       {crud.isView && crud.selected && (
         <AdminModal open onClose={crud.close} title="Detalhes do Produto"
-          footer={<Button onClick={crud.close} className="h-10 bg-blue-600 hover:bg-blue-700 text-white px-5">Fechar</Button>}>
+          footer={<Button onClick={crud.close} className="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Fechar</Button>}>
           <div className="col-span-2 flex justify-center mb-2">
             {crud.selected.image ? (
               <img src={getImageUrl(crud.selected.image)} alt={crud.selected.name} className="h-24 object-contain rounded-lg border border-slate-100 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900" />

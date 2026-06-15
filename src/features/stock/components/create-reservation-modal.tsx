@@ -156,7 +156,7 @@ function ReservationFormFields({
           value={formState.mensagem}
           onChange={(e) => setFormState((s) => ({ ...s, mensagem: e.target.value }))}
           placeholder="Adicionar mensagem..."
-          className="h-22 w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-300 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all resize-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-700"
+          className="h-22 w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-300 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all resize-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-700"
         />
       </div>
 
@@ -166,7 +166,7 @@ function ReservationFormFields({
           id="orcamento"
           checked={formState.orcamento}
           onChange={(e) => setFormState((s) => ({ ...s, orcamento: e.target.checked }))}
-          className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+          className="w-5 h-5 rounded border-slate-300 text-amber-500 focus:ring-amber-400 cursor-pointer accent-amber-500"
         />
         <label
           htmlFor="orcamento"
@@ -376,7 +376,7 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
           <span>Voltar</span>
         </Button>
         
-        <Button variant="default" disabled={isSubmitting} onClick={handleSave} className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 active:scale-95">
+        <Button variant="default" disabled={isSubmitting} onClick={handleSave} className="flex-1 h-11 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] font-semibold active:scale-95">
           <ShieldCheck className="size-4" />
           <span>{isSubmitting ? "A guardar..." : "Reservar"}</span>
         </Button>
