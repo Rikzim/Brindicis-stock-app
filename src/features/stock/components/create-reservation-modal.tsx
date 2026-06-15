@@ -186,7 +186,7 @@ export function CreateReservationPanel({ product, onClose }: CreateReservationPa
   
   const { data: reservations = [] } = useQuery({
     queryKey: ["all-reservations"],
-    queryFn: getReservations,
+    queryFn: () => getReservations(),
   });
 
   const { data: users = [] } = useQuery({

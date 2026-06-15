@@ -13,7 +13,7 @@ export function AdminDashboard() {
   });
 
   const { data: reservations = [], isLoading: loadingReservations } = useQuery({
-    queryKey: ["admin-reservations"], queryFn: getReservations, refetchOnWindowFocus: false,
+    queryKey: ["admin-reservations"],     queryFn: () => getReservations(), refetchOnWindowFocus: false,
   });
 
   const totalQuantity = products.reduce((sum, p) => sum + (p.quantity || 0), 0);

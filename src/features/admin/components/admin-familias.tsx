@@ -45,7 +45,7 @@ export function AdminFamilias() {
       if (crud.isAdd) {
         await createFamily({ name: form.name.trim().toUpperCase(), status: parseInt(form.status) });
       } else if (crud.selected) {
-        await updateFamily({ id: crud.selected.id, name: form.name.trim().toUpperCase(), status: parseInt(form.status) });
+        await updateFamily(crud.selected.id, { name: form.name.trim().toUpperCase(), status: parseInt(form.status) });
       }
       queryClient.invalidateQueries({ queryKey: ["stock-families"] });
       toast.success(crud.isAdd ? "Família adicionada com sucesso." : "Família atualizada com sucesso.");

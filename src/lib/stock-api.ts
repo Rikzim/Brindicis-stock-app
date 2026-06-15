@@ -2,38 +2,36 @@ import { apiClient } from "./api-client";
 import type { ProductStock, StockFamily, StockReservation } from "./stock-types";
 
 export async function getProducts(): Promise<ProductStock[]> {
-  const { data } = await apiClient.get<{ products: ProductStock[] }>("/api/getProducts");
+  const { data } = await apiClient.get<{ products: ProductStock[] }>("/stock/products");
   return data.products;
 }
 
 export async function getFamilies(): Promise<StockFamily[]> {
-  const { data } = await apiClient.get<{ families: StockFamily[] }>("/api/getFamilies");
+  const { data } = await apiClient.get<{ families: StockFamily[] }>("/stock/families");
   return data.families;
 }
 
 export async function createFamily(data: { name: string; status?: number }) {
-  return apiClient.post("/api/create-family", data);
+  return apiClient.post("/stock/families", data);
 }
 
-export async function updateFamily(data: { id: number; name?: string; status?: number }) {
-  return apiClient.put("/api/edit-family", data);
+export async function updateFamily(id: number, data: { name?: string; status?: number }) {
+  return apiClient.patch(`/stock/families/${id}`, data);
 }
 
 export async function deleteFamily(id: number) {
-  return apiClient.delete("/api/delete-family", { data: { id } });
+  return apiClient.delete(`/stock/families/${id}`);
 }
 
-export async function getReservations(): Promise<StockReservation[]> {
-  const { data } = await apiClient.get<any>("/api/getReservations");
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.reservations)) return data.reservations;
-  return [];
-}
+type GetReservationsParams = {
+  recent?: boolean | string;
+  productId?: number;
+  unviewed?: boolean | string;
+  count?: number;
+};
 
-export async function getProductReservations(productId: number): Promise<StockReservation[]> {
-  const { data } = await apiClient.get<any>("/api/getProductReservations", {
-    params: { id: productId },
-  });
+export async function getReservations(params?: GetReservationsParams): Promise<StockReservation[]> {
+  const { data } = await apiClient.get<any>("/stock/reservations", { params });
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data.reservations)) return data.reservations;
   return [];
@@ -49,7 +47,7 @@ export async function createReservation(payload: {
   proposal?: number;
   order?: string;
 }): Promise<any> {
-  const { data } = await apiClient.post<any>("/api/make-reservation", payload);
+  const { data } = await apiClient.post<any>("/stock/reservations", payload);
   return data;
 }
 
@@ -59,9 +57,7 @@ export async function getUsers(): Promise<any[]> {
 }
 
 export async function deleteReservation(id: number): Promise<void> {
-  await apiClient.delete("/api/delete-reservation", {
-    data: { id },
-  });
+  await apiClient.delete(`/stock/reservations/${id}`);
 }
 
 

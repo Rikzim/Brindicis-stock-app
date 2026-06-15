@@ -32,7 +32,7 @@ export function AdminReservas() {
   const [selectedEstado, setSelectedEstado] = useState("Todos");
 
   const { data: reservations = [], isLoading: loadingReservations } = useQuery({
-    queryKey: ["admin-reservations"], queryFn: getReservations, refetchOnWindowFocus: false,
+    queryKey: ["admin-reservations"],     queryFn: () => getReservations(), refetchOnWindowFocus: false,
   });
   const { data: products = [] } = useQuery({
     queryKey: ["stock-products"], queryFn: getProducts, refetchOnWindowFocus: false,

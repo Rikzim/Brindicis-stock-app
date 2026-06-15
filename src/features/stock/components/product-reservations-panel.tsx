@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Info, ChevronLeft, Plus, Trash2, FileText } from "@/lib/icon-map";
 import type { ProductStock } from "@/lib/stock-types";
-import { getProductReservations, deleteReservation } from "@/lib/stock-api";
+import { getReservations, deleteReservation } from "@/lib/stock-api";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ export function ProductReservationsPanel({
 
   const { data: reservations = [], isLoading, refetch } = useQuery({
     queryKey: ["product-reservations", product.id],
-    queryFn: () => getProductReservations(product.id),
+    queryFn: () => getReservations({ productId: product.id }),
   });
 
   const handleDelete = async (id: number) => {
