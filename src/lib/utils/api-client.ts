@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Routes } from "@brindicis/api-client";
+import { Routes } from "./routes";
 import { authStore, getAuthToken } from "@/lib/state/auth-store";
 import { navigateTo } from "@/lib/utils/navigate";
 

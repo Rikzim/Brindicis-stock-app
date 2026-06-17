@@ -8,10 +8,7 @@ up:
 down:
 	docker-compose down
 
-pre-build:
-	./copy-api-client.sh
-
-build: pre-build
+build:
 	docker-compose up -d --build
 
 logs:
@@ -59,4 +56,4 @@ help:
 	@echo "  make links       Show URLs"
 	@echo "  make help        Show this help"
 
-.PHONY: up down pre-build build logs status gen-routes links help
+.PHONY: up down build logs status gen-routes links help

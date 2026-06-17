@@ -8,7 +8,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@brindicis/api-client": path.resolve(__dirname, "./packages/api-client/dist"),
     },
   },
   server: {
