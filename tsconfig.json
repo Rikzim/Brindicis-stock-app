@@ -1,28 +1,17 @@
 {
+  "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
-    "target": "es2023",
-    "module": "esnext",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
-      "paths": {
-      "@/*": ["./src/*"]
-    },
-    "skipLibCheck": true,
-    "jsx": "react-jsx",
-
-    /* Bundler mode */
+    "target": "ES2023",
+    "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-
-    /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src/**/*", "src/**/*.svelte"],
+  "exclude": ["node_modules"]
 }

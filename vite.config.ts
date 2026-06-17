@@ -1,39 +1,17 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [tailwindcss(), svelte()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@brindicis/api-client": path.resolve(__dirname, "./packages/api-client/dist"),
     },
   },
   server: {
     port: 5176,
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id: string) {
-          if (id.includes("node_modules")) {
-            if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
-              return "vendor-react";
-            }
-            if (id.includes("node_modules/cmdk") || id.includes("node_modules/@radix-ui")) {
-              return "vendor-ui";
-            }
-            if (id.includes("node_modules/lucide-react")) {
-              return "vendor-icons";
-            }
-            if (id.includes("node_modules/@tanstack")) {
-              return "vendor-router";
-            }
-            return "vendor";
-          }
-        },
-      },
-    },
   },
 });
