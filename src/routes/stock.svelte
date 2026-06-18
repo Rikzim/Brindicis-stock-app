@@ -3,17 +3,13 @@
   import FiltersBar from "@/lib/components/stock/filters-bar.svelte";
   import ProductGrid from "@/lib/components/stock/product-grid.svelte";
   import ProductDetailPanel from "@/lib/components/stock/product-detail-panel.svelte";
-  import AddProductModal from "@/lib/components/stock/add-product-modal.svelte";
   import { settingsStore } from "@/lib/state/settings-store";
   import { getProducts, getFamilies } from "@/lib/utils/stock-api";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
-  import { Plus } from "@/lib/utils/icon-map";
-  import Button from "@/lib/components/ui/button.svelte";
 
   let panelPosition = $derived($settingsStore.panelPosition);
   let selectedProductId = $state(null);
   let searchQuery = $state("");
-  let showAddModal = $state(false);
   let filters = $state({
     familia: "Todas",
     disponibilidade: "Todas",
@@ -75,12 +71,6 @@
     (productsStore.data || []).forEach((p) => p.sizes?.forEach((s) => set.add(s.size)));
     return Array.from(set);
   });
-
-  let fornecedores = $derived.by(() => {
-    const set = new Set();
-    (productsStore.data || []).forEach((p) => { if (p.type) set.add(p.type); });
-    return Array.from(set);
-  });
 </script>
 
 <div class="flex h-screen flex-col bg-[#F3F4F6] p-2 gap-2 transition-colors duration-250 dark:bg-slate-950">
@@ -100,20 +90,11 @@
         {availableSizes}
         bind:filters
       />
-      <div class="relative flex-1 min-h-0 overflow-hidden">
-        <ProductGrid
-          products={filteredProducts}
-          isLoading={productsStore.isLoading}
-          bind:selectedId={selectedProductId}
-        />
-        <Button
-          onclick={() => showAddModal = true}
-          class="absolute bottom-5 right-5 h-12 px-5 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] font-extrabold shadow-lg rounded-xl active:scale-95 transition-all z-10"
-        >
-          <Plus class="size-5" />
-          <span>Adicionar Produto</span>
-        </Button>
-      </div>
+      <ProductGrid
+        products={filteredProducts}
+        isLoading={productsStore.isLoading}
+        bind:selectedId={selectedProductId}
+      />
     </div>
 
     {#if panelPosition === "right" && selectedProduct}
@@ -124,10 +105,3 @@
     {/if}
   </div>
 </div>
-
-<AddProductModal
-  open={showAddModal}
-  onClose={() => showAddModal = false}
-  onSuccess={() => productsStore.refetch()}
-  {fornecedores}
-/>
