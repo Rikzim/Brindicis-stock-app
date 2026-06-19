@@ -16,6 +16,8 @@
   import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
   import DetailGrid from "@/lib/components/ui/detail-grid.svelte";
 
+  let { searchQuery = "" } = $props();
+
   const productsStore = createAsyncStore(getProducts);
 
   let supplierList = $state([
@@ -66,6 +68,12 @@
     crud.selected ? (productsStore.data || []).filter((p) => p.type?.toUpperCase() === crud.selected.name.toUpperCase()) : []
   );
 
+  let filteredSuppliers = $derived(
+    searchQuery
+      ? supplierList.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : supplierList
+  );
+
   const columns = [
     { key: "name", header: "Fornecedor", render: (r) => `<span class="font-semibold">${r.name}</span>`, className: "w-1/3" },
     { key: "status", header: "Status", className: "w-1/3 text-center", headerClassName: "text-center" },
@@ -81,7 +89,7 @@
     </Button>
   </PageCard>
 
-  <DataTable columns={columns} data={supplierList} isLoading={productsStore.isLoading && supplierList.length === 0}
+  <DataTable columns={columns} data={filteredSuppliers} isLoading={productsStore.isLoading && supplierList.length === 0}
     loadingMessage="A carregar fornecedores..." emptyMessage="Sem fornecedores disponíveis." rowKey={(r) => r.id}>
     {#snippet cell(row, col)}
       {#if col.key === "status"}

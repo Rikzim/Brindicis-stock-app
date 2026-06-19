@@ -25,6 +25,8 @@
     }
   }
 
+  let { searchQuery = "" } = $props();
+
   const reservationsStore = createAsyncStore(() => getReservations());
   const productsStore = createAsyncStore(getProducts);
   const usersStore = createAsyncStore(getUsers);
@@ -37,15 +39,25 @@
     form.productId ? (productsStore.data || []).find((p) => p.id.toString() === form.productId) || null : null
   );
 
-  let filteredReservations = $derived(
-    (reservationsStore.data || []).filter((res) => {
-      if (selectedEstado === "Todos") return true;
-      if (selectedEstado === "Pendente") return res.status === 0;
-      if (selectedEstado === "Aprovada") return res.status === 1;
-      if (selectedEstado === "Rejeitada") return res.status !== 0 && res.status !== 1;
-      return true;
-    })
-  );
+  let filteredReservations = $derived.by(() => {
+    let result = reservationsStore.data || [];
+    if (selectedEstado !== "Todos") {
+      result = result.filter((res) => {
+        if (selectedEstado === "Pendente") return res.status === 0;
+        if (selectedEstado === "Aprovada") return res.status === 1;
+        if (selectedEstado === "Rejeitada") return res.status !== 0 && res.status !== 1;
+        return true;
+      });
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((res) =>
+        (res.name || "").toLowerCase().includes(q) ||
+        (res.ref || res.product?.ref || "").toLowerCase().includes(q)
+      );
+    }
+    return result;
+  });
 
   let userOptions = $derived(
     (usersStore.data || []).length > 0 ? usersStore.data.map((u) => ({ value: u.name, label: u.name })) : [{ value: "Administrador", label: "Administrador" }]

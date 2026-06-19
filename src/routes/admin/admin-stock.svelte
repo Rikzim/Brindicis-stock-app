@@ -5,10 +5,9 @@
   import { toast } from "svelte-sonner";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
   import { createCrudModal } from "@/lib/state/crud-modal.svelte";
-  import { getImageUrl } from "@/lib/utils";
+  import AuthedImage from "@/lib/components/ui/authed-image.svelte";
   import Button from "@/lib/components/ui/button.svelte";
   import Input from "@/lib/components/ui/input.svelte";
-  import SearchableSelect from "@/lib/components/ui/searchable-select.svelte";
   import FormField from "@/lib/components/ui/form-field.svelte";
   import FilterSelectField from "@/lib/components/ui/filter-select-field.svelte";
   import PageCard from "@/lib/components/ui/page-card.svelte";
@@ -43,8 +42,11 @@
   const productsStore = createAsyncStore(getProducts);
   const familiesStore = createAsyncStore(getFamilies);
 
+  let { searchQuery = "" } = $props();
+
   let crud = createCrudModal();
   let showAddModal = $state(false);
+  let editFullProduct = $state(null);
   let filters = $state({
     selectedFornecedor: "Todas",
     selectedFamilia: "Todas",
@@ -53,8 +55,6 @@
     searchCaixa: "",
     searchGaveta: "",
   });
-  let form = $state({ ref: "", name: "", family: "", quantity: "0", pvp: "0", estado: "Ativo" });
-
   let fornecedores = $derived.by(() => {
     const set = new Set(["Todas"]);
     productsStore.data?.forEach((p) => { if (p.type) set.add(p.type); });
@@ -69,28 +69,40 @@
       if (filters.selectedFamilia !== "Todas" && product.family?.name !== filters.selectedFamilia) continue;
       if (filters.selectedEstado !== "Todos" && (filters.selectedEstado === "Ativo" ? product.active !== 1 : product.active !== 0)) continue;
 
-      const variants = (product.variants && product.variants.length > 0) ? product.variants : [{
-        id: 0, productId: product.id, color: "-", size: null, quantity: product.quantity,
-        reserved: product.reserved, cx: product.cx, drawer: product.drawer,
-      }];
-
-      for (const v of variants) {
-        const avail = v.quantity - v.reserved;
-        if (filters.selectedDisponibilidade === "Com Stock" && avail <= 0) continue;
-        if (filters.selectedDisponibilidade === "Esgotado" && avail > 0) continue;
-        if (filters.searchCaixa && !v.cx?.toLowerCase().includes(filters.searchCaixa.toLowerCase())) continue;
-        if (filters.searchGaveta && !v.drawer?.toLowerCase().includes(filters.searchGaveta.toLowerCase())) continue;
-
-        rows.push({
-          id: `${product.id}-${v.id}`, productId: product.id, variantId: v.id || null,
-          name: product.name, ref: product.ref, fullRef: product.ref,
-          image: product.images?.[0]?.url || null, color: v.color || "-",
-          quantity: v.quantity, reserved: v.reserved, drawer: v.drawer || product.drawer || "-",
-          cx: v.cx || product.cx || "-", pvp: product.pvp,
-          fornecedor: product.type || "-", family: product.family?.name || "-",
-          estado: product.active === 1 ? "Ativo" : "Inativo",
-        });
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (!product.ref.toLowerCase().includes(q) &&
+            !product.name.toLowerCase().includes(q) &&
+            !product.description?.toLowerCase().includes(q)) continue;
       }
+
+      const totalQty = product.variants.reduce((sum, v) => sum + v.quantity, 0);
+      const totalReserved = product.variants.reduce((sum, v) => sum + v.reserved, 0);
+      const avail = totalQty - totalReserved;
+      if (filters.selectedDisponibilidade === "Com Stock" && avail <= 0) continue;
+      if (filters.selectedDisponibilidade === "Esgotado" && avail > 0) continue;
+
+      const colorList = (product.colors || []).map((c) => c.name).join(", ") || "-";
+      const drawerList = [...new Set(product.variants.map((v) => v.drawer).filter(Boolean))].join(", ") || product.drawer || "-";
+      const cxList = [...new Set(product.variants.map((v) => v.cx).filter(Boolean))].join(", ") || product.cx || "-";
+
+      if (filters.searchCaixa && !cxList.toLowerCase().includes(filters.searchCaixa.toLowerCase())) continue;
+      if (filters.searchGaveta && !drawerList.toLowerCase().includes(filters.searchGaveta.toLowerCase())) continue;
+
+      rows.push({
+        id: product.id, productId: product.id,
+        name: product.name, ref: product.ref,
+        image: product.images?.[0]?.url || null,
+        color: colorList,
+        quantity: totalQty,
+        reserved: totalReserved,
+        drawer: drawerList,
+        cx: cxList,
+        pvp: product.pvp,
+        fornecedor: product.type || "-",
+        family: product.family?.name || "-",
+        estado: product.active === 1 ? "Ativo" : "Inativo",
+      });
     }
     return rows;
   });
@@ -105,27 +117,20 @@
     { value: "Todos", label: "Todos" }, { value: "Ativo", label: "Ativo" }, { value: "Inativo", label: "Inativo" },
   ];
 
-  function resetForm() { form = { ref: "", name: "", family: familiesStore.data?.[0]?.name || "", quantity: "0", pvp: "0", estado: "Ativo" }; }
   function handleAdd() { showAddModal = true; }
   function handleView(row) { crud.openView(row); }
   function handleEdit(row) {
-    form = { ref: row.ref, name: row.name, family: row.family, quantity: row.quantity.toString(), pvp: row.pvp.toString(), estado: row.estado };
+    editFullProduct = productsStore.data?.find((p) => p.id === row.productId) || null;
     crud.openEdit(row);
   }
   function handleDelete(row) { crud.openDelete(row); }
-
-  function handleSave(e) {
-    e.preventDefault();
-    toast.success("Produto atualizado com sucesso.");
-    crud.close();
-  }
 
   function handleDeleteConfirm() {
     toast.success("Produto removido com sucesso."); crud.close();
   }
 
   const columns = [
-    { key: "image", header: "Imagem", render: (row) => row.image ? `<img src="${getImageUrl(row.image)}" alt="${row.name}" class="size-10 object-contain rounded-md border border-slate-100 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900" />` : `<div class="size-10 flex items-center justify-center rounded-md border border-slate-100 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-900">-</div>` },
+    { key: "image", header: "Imagem" },
     { key: "ref", header: "Ref", render: (row) => `<span class="font-semibold">${row.ref}</span>` },
     { key: "color", header: "Cor", render: (row) => row.color },
     { key: "qntd", header: "Qntd", render: (row) => row.quantity },
@@ -172,7 +177,13 @@
   <DataTable columns={columns} data={stockRows} isLoading={productsStore.isLoading}
     loadingMessage="A carregar produtos..." emptyMessage="Nenhum produto encontrado." rowKey={(r) => r.id}>
     {#snippet cell(row, col)}
-      {#if col.key === "estado"}
+      {#if col.key === "image"}
+        {#if row.image}
+          <AuthedImage path={row.image} width={200} alt={row.name} class="size-10 object-contain rounded-md border border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900" />
+        {:else}
+          <div class="size-10 flex items-center justify-center rounded-md border border-slate-100 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-900">-</div>
+        {/if}
+      {:else if col.key === "estado"}
         <StatusBadge status={row.estado} />
       {:else if col.key === "acoes"}
         <RowActions
@@ -186,35 +197,6 @@
     {/snippet}
   </DataTable>
 
-  {#if crud.isEdit}
-    <AdminModal open onClose={crud.close} title="Editar Produto">
-      {#snippet footer()}
-        <Button variant="outline" onclick={crud.close} class="h-10 px-4">Cancelar</Button>
-        <Button type="submit" form="product-form" class="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Salvar</Button>
-      {/snippet}
-      <form id="product-form" onsubmit={handleSave} class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="Referência" for="prod-ref">
-          <Input id="prod-ref" required placeholder="Ex: REF-001" bind:value={form.ref} />
-        </FormField>
-        <FormField label="Nome" for="prod-name">
-          <Input id="prod-name" required placeholder="Nome do produto" bind:value={form.name} />
-        </FormField>
-        <FormField label="Família" for="prod-family">
-          <SearchableSelect id="prod-family" bind:value={form.family} options={familyOptions} placeholder="Selecionar família" />
-        </FormField>
-        <FormField label="Estado" for="prod-estado">
-          <SearchableSelect id="prod-estado" bind:value={form.estado} options={[{ value: "Ativo", label: "Ativo" }, { value: "Inativo", label: "Inativo" }]} placeholder="Selecionar estado" />
-        </FormField>
-        <FormField label="Quantidade" for="prod-qty">
-          <Input id="prod-qty" type="number" min="0" bind:value={form.quantity} />
-        </FormField>
-        <FormField label="PVP (€)" for="prod-pvp">
-          <Input id="prod-pvp" type="number" step="0.01" min="0" bind:value={form.pvp} />
-        </FormField>
-      </form>
-    </AdminModal>
-  {/if}
-
   {#if crud.isView && crud.selected}
     <AdminModal open onClose={crud.close} title="Detalhes do Produto">
       {#snippet footer()}
@@ -222,7 +204,7 @@
       {/snippet}
       <div class="col-span-2 flex justify-center mb-2">
         {#if crud.selected.image}
-          <img src={getImageUrl(crud.selected.image)} alt={crud.selected.name} class="h-24 object-contain rounded-lg border border-slate-100 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900" />
+              <AuthedImage path={crud.selected.image} width={200} alt={crud.selected.name} class="size-24 object-contain rounded-lg border border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900" />
         {:else}
           <div class="h-24 w-24 flex items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-900">Sem imagem</div>
         {/if}
@@ -244,6 +226,14 @@
     open={showAddModal}
     onClose={() => showAddModal = false}
     onSuccess={() => productsStore.refetch()}
-    fornecedores={fornecedores}
+    {fornecedores}
+  />
+
+  <AddProductModal
+    open={crud.isEdit}
+    editProduct={editFullProduct}
+    onClose={() => { editFullProduct = null; crud.close(); }}
+    onSuccess={() => productsStore.refetch()}
+    {fornecedores}
   />
 </div>

@@ -1,4 +1,4 @@
 export function navigateTo(path: string) {
   window.history.pushState({}, "", path);
-  window.dispatchEvent(new Event("popstate"));
+  queueMicrotask(() => window.dispatchEvent(new Event("popstate")));
 }

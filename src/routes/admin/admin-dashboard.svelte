@@ -2,23 +2,32 @@
   import { navigateTo } from "@/lib/utils/navigate";
   import { getProducts, getReservations } from "@/lib/utils/stock-api";
   import { Archive, Package } from "lucide-svelte";
-  import { getImageUrl } from "@/lib/utils";
+  import AuthedImage from "@/lib/components/ui/authed-image.svelte";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
   import PageCard from "@/lib/components/ui/page-card.svelte";
   import DataTable from "@/lib/components/ui/data-table.svelte";
 
+  let { searchQuery = "" } = $props();
+
   const productsStore = createAsyncStore(getProducts);
   const reservationsStore = createAsyncStore(() => getReservations());
+
+  let filteredReservations = $derived.by(() => {
+    const all = reservationsStore.data || [];
+    if (!searchQuery) return all.slice(0, 5);
+    const q = searchQuery.toLowerCase();
+    return all.filter((r) =>
+      (r.ref || r.product?.ref || "").toLowerCase().includes(q) ||
+      (r.name || "").toLowerCase().includes(q)
+    ).slice(0, 5);
+  });
 
   let displayStock = $derived(productsStore.isLoading ? "..." : (productsStore.data?.reduce((sum, p) => sum + (p.quantity || 0), 0) || 98617));
   let displayReserved = $derived(reservationsStore.isLoading ? "..." : (reservationsStore.data?.reduce((sum, r) => sum + (r.quantity || 0), 0) || 0));
   let isLoading = $derived(productsStore.isLoading || reservationsStore.isLoading);
 
   const columns = [
-    { key: "image", header: "Imagem", render: (r) => {
-      if (r.image) return `<img src="${getImageUrl(r.image)}" alt="${r.ref || 'produto'}" class="size-9 object-contain rounded-md border border-slate-100 bg-slate-50 p-0.5 dark:border-slate-800 dark:bg-slate-900" />`;
-      return `<div class="size-9 flex items-center justify-center rounded-md border border-slate-100 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-900 text-xs">-</div>`;
-    }},
+    { key: "image", header: "Imagem" },
     { key: "ref", header: "Referência", render: (r) => `<span class="font-semibold">${r.ref || r.product?.ref || "-"}</span>` },
     { key: "comercial", header: "Comercial", render: (r) => r.name || "-" },
     { key: "cor", header: "Cor", render: (r) => r.variant?.color || "-" },
@@ -59,11 +68,23 @@
     </div>
     <DataTable
       {columns}
-      data={(reservationsStore.data || []).slice(0, 5)}
+      data={filteredReservations}
       {isLoading}
       loadingMessage="A carregar dados..."
       emptyMessage="Sem dados disponíveis."
       rowKey={(r) => r.id}
-    />
+    >
+      {#snippet cell(row, col)}
+        {#if col.key === "image"}
+          {#if row.image}
+            <AuthedImage path={row.image} width={200} alt={row.ref || 'produto'} class="size-9 object-contain rounded-md border border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900" />
+          {:else}
+            <div class="size-9 flex items-center justify-center rounded-md border border-slate-100 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-900 text-xs">-</div>
+          {/if}
+        {:else if col.render}
+          {@html col.render(row)}
+        {/if}
+      {/snippet}
+    </DataTable>
   </PageCard>
 </div>

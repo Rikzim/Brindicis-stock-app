@@ -1,5 +1,4 @@
 <script>
-  import { onMount } from "svelte";
   import StockNavbar from "@/lib/components/layout/stock-navbar.svelte";
   import { navigateTo } from "@/lib/utils/navigate";
   import {
@@ -17,6 +16,8 @@
   import AdminFornecedores from "@/routes/admin/admin-fornecedores.svelte";
   import AdminFamilias from "@/routes/admin/admin-familias.svelte";
 
+  let searchQuery = $state("");
+
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
     { name: "Stock", path: "/admin/stock", icon: Layers },
@@ -30,26 +31,12 @@
   function onNavigate() {
     currentPath = window.location.pathname || "/admin";
   }
-
-  onMount(() => {
-    window.addEventListener("popstate", onNavigate);
-    return () => window.removeEventListener("popstate", onNavigate);
-  });
-
-  const ChildComponent = $derived.by(() => {
-    if (currentPath === "/admin" || currentPath === "/admin/") return AdminDashboard;
-    if (currentPath === "/admin/stock") return AdminStock;
-    if (currentPath === "/admin/reservas") return AdminReservas;
-    if (currentPath === "/admin/fornecedores") return AdminFornecedores;
-    if (currentPath === "/admin/familias") return AdminFamilias;
-    return AdminDashboard;
-  });
 </script>
 
 <svelte:window onpopstate={onNavigate} />
 
 <div class="flex h-screen flex-col bg-[#F3F4F6] p-2 gap-2 transition-colors duration-250 dark:bg-slate-950">
-  <StockNavbar searchQuery="" onSearchChange={() => {}} />
+  <StockNavbar bind:searchQuery />
 
   <div class="flex flex-1 overflow-hidden min-h-0 gap-2">
     <aside class="w-[280px] shrink-0 bg-white rounded-2xl border-2 border-slate-200 shadow-sm flex flex-col justify-between p-4 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-700">
@@ -92,7 +79,19 @@
     </aside>
 
     <main class="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
-      <ChildComponent />
+      {#if currentPath === "/admin" || currentPath === "/admin/"}
+        <AdminDashboard {searchQuery} />
+      {:else if currentPath === "/admin/stock"}
+        <AdminStock {searchQuery} />
+      {:else if currentPath === "/admin/reservas"}
+        <AdminReservas {searchQuery} />
+      {:else if currentPath === "/admin/fornecedores"}
+        <AdminFornecedores {searchQuery} />
+      {:else if currentPath === "/admin/familias"}
+        <AdminFamilias {searchQuery} />
+      {:else}
+        <AdminDashboard {searchQuery} />
+      {/if}
     </main>
   </div>
 </div>

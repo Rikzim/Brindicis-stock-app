@@ -1,8 +1,8 @@
 <script>
   import { navigateTo } from "@/lib/utils/navigate";
   import Logo from "@/assets/logo.svelte";
-  import { Search, Settings, ShieldCheck, LogOut } from "@/lib/utils/icon-map";
-  import { getImageUrl } from "@/lib/utils";
+  import { Search, Settings, ShieldCheck, LogOut, User } from "@/lib/utils/icon-map";
+  import AuthedImage from "@/lib/components/ui/authed-image.svelte";
   import Button from "@/lib/components/ui/button.svelte";
   import Input from "@/lib/components/ui/input.svelte";
   import Badge from "@/lib/components/ui/badge.svelte";
@@ -21,7 +21,7 @@
   let settings = $derived($settingsStore);
 </script>
 
-<nav class="relative flex h-16 items-stretch bg-white rounded-2xl border-2 border-slate-200 shadow-sm transition-colors duration-250 dark:bg-slate-900 dark:border-slate-700">
+<nav class="relative flex h-16 items-stretch bg-white rounded-2xl border-2 border-slate-200 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-700">
   <!-- Logo Section -->
   <div class="flex items-center gap-2.5 pl-5 pr-6 shrink-0">
     <button type="button" onclick={() => window.location.reload()} class="flex items-center gap-2.5 cursor-pointer">
@@ -63,12 +63,16 @@
     <Button variant="ghost" size="icon" onclick={() => showSettings = !showSettings} class="text-slate-500 dark:text-slate-400 size-9">
       <Settings class="size-5" />
     </Button>
-    <Button variant="ghost" size="icon" onclick={() => showProfile = !showProfile} class="rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-slate-300 dark:hover:ring-slate-500 transition-all size-9">
-      {#if user?.image_path}
-        <img src={getImageUrl(user.image_path)} alt={user.name} class="size-8 rounded-full" />
-      {:else}
+      <Button variant="ghost" size="icon" onclick={() => showProfile = !showProfile} class="rounded-full ring-1 ring-slate-200 dark:ring-slate-700 hover:ring-slate-300 dark:hover:ring-slate-500 transition-all size-9 overflow-hidden">
+        {#if user?.image_path}
+          <AuthedImage path={user.image_path} width={200} alt={user.name} class="size-8 rounded-full object-contain" />
+        {:else if user}
         <div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-semibold">
           {initial}
+        </div>
+      {:else}
+        <div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+          <User class="size-4" />
         </div>
       {/if}
     </Button>
@@ -131,12 +135,14 @@
     ></button>
     <div class="absolute right-4 top-[68px] z-50 w-56 rounded-2xl border-2 border-slate-200 bg-white shadow-lg transition-colors duration-250 dark:border-slate-700 dark:bg-slate-800 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
       <div class="px-4 py-3.5 flex flex-col border-b-2 border-slate-100 dark:border-slate-700">
-        <span class="text-sm font-bold text-slate-800 dark:text-slate-100">
-          {user?.name || "Admin"}
-        </span>
-        <span class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-          {user?.email || "admin@brindicis.local"}
-        </span>
+        {#if user}
+          <span class="text-sm font-bold text-slate-800 dark:text-slate-100">
+            {user.name}
+          </span>
+          <span class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+            {user.email}
+          </span>
+        {/if}
       </div>
       <Button
         variant="ghost"

@@ -16,6 +16,8 @@
   import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
   import DetailGrid from "@/lib/components/ui/detail-grid.svelte";
 
+  let { searchQuery = "" } = $props();
+
   const familiesStore = createAsyncStore(getFamilies);
   const productsStore = createAsyncStore(getProducts);
 
@@ -67,6 +69,12 @@
     return counts;
   });
 
+  let filteredFamilies = $derived(
+    searchQuery
+      ? (familiesStore.data || []).filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : (familiesStore.data || [])
+  );
+
   const columns = [
     { key: "name", header: "Nome da Família", render: (r) => `<span class="font-semibold">${r.name}</span>`, className: "w-1/4" },
     { key: "products", header: "Produtos Associados", className: "w-1/4 text-center", headerClassName: "text-center" },
@@ -83,7 +91,7 @@
     </Button>
   </PageCard>
 
-  <DataTable columns={columns} data={familiesStore.data || []} isLoading={familiesStore.isLoading && (!familiesStore.data || familiesStore.data.length === 0)}
+  <DataTable columns={columns} data={filteredFamilies} isLoading={familiesStore.isLoading && (!familiesStore.data || familiesStore.data.length === 0)}
     loadingMessage="A carregar famílias..." emptyMessage="Sem famílias disponíveis." rowKey={(r) => r.id}>
     {#snippet cell(row, col)}
       {#if col.key === "products"}

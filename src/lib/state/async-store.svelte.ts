@@ -5,8 +5,7 @@ export function createAsyncStore<T>(fetcher: () => Promise<T>) {
   let fetchCount = $state(0);
 
   $effect(() => {
-    // Re-run when fetchCount changes (for manual refetch)
-    fetchCount;
+    fetchCount + 0;
 
     let cancelled = false;
     isLoading = true;

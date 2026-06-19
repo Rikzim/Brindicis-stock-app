@@ -8,7 +8,7 @@
     Calendar,
     Plus,
   } from "@/lib/utils/icon-map";
-  import { getImageUrl } from "@/lib/utils";
+  import AuthedImage from "@/lib/components/ui/authed-image.svelte";
   import Button from "@/lib/components/ui/button.svelte";
   import SearchableSelect from "@/lib/components/ui/searchable-select.svelte";
   import CreateReservationPanel from "./create-reservation-modal.svelte";
@@ -99,45 +99,41 @@
         <!-- HEADER - Imagem + Nome -->
         <div class="flex bg-white border-b-2 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 shrink-0 min-h-[150px]">
           <!-- Imagem -->
-          <div class="relative flex w-[140px] shrink-0 items-center justify-center bg-slate-100 border-r border-slate-200 dark:bg-slate-950 dark:border-slate-700 overflow-hidden">
-            {#if currentImage}
-              <img
-                src={getImageUrl(currentImage.url)}
-                alt={product.name}
-                class="size-full object-cover"
-              />
-            {:else}
-              <Image class="text-slate-300 size-9 mb-0.5 dark:text-slate-600" />
-              <span class="text-[9px] font-bold text-slate-400 tracking-wider absolute bottom-2 dark:text-slate-500">
-                SEM IMAGEM
-              </span>
-            {/if}
-
-            {#if hasImages && images.length > 1}
-              <Button
-                variant="secondary"
-                size="icon"
-                onclick={goPrevImage}
-                class="absolute left-1 top-1/2 -translate-y-1/2 size-6 opacity-80 hover:opacity-100 transition-opacity"
-              >
-                <ChevronLeft class="size-3.5" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                onclick={goNextImage}
-                class="absolute right-1 top-1/2 -translate-y-1/2 size-6 opacity-80 hover:opacity-100 transition-opacity"
-              >
-                <ChevronRight class="size-3.5" />
-              </Button>
-              <div class="absolute bottom-1.5 flex gap-1">
-                {#each images as _, i}
-                  <div
-                    class="size-1.5 rounded-full transition-all duration-300 {i === currentImageIndex ? 'bg-amber-400 dark:bg-amber-400 w-3' : 'bg-slate-300 dark:bg-slate-700'}"
-                  ></div>
-                {/each}
+          <div class="relative w-[140px] shrink-0 bg-slate-100 border-r border-slate-200 dark:bg-slate-950 dark:border-slate-700 overflow-hidden">
+            <div class="flex flex-col">
+              <div class="aspect-square">
+                {#if currentImage}
+                  <AuthedImage path={currentImage.url} width={400} alt={product.name} class="absolute inset-0 size-full object-contain" />
+                {:else}
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <Image class="text-slate-300 size-9 mb-0.5 dark:text-slate-600" />
+                    <span class="text-[9px] font-bold text-slate-400 tracking-wider absolute bottom-2 dark:text-slate-500">
+                      SEM IMAGEM
+                    </span>
+                  </div>
+                {/if}
               </div>
-            {/if}
+
+              {#if hasImages && images.length > 1}
+                <div class="absolute left-1 top-1/2 -translate-y-1/2 z-10">
+                  <Button variant="secondary" size="icon" onclick={goPrevImage} class="size-6 opacity-80 hover:opacity-100">
+                    <ChevronLeft class="size-3.5" />
+                  </Button>
+                </div>
+                <div class="absolute right-1 top-1/2 -translate-y-1/2 z-10">
+                  <Button variant="secondary" size="icon" onclick={goNextImage} class="size-6 opacity-80 hover:opacity-100">
+                    <ChevronRight class="size-3.5" />
+                  </Button>
+                </div>
+                <div class="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1 z-10">
+                  {#each images as _, i}
+                    <div
+                      class="size-1.5 rounded-full transition-all duration-300 {i === currentImageIndex ? 'bg-amber-400 dark:bg-amber-400 w-3' : 'bg-slate-300 dark:bg-slate-700'}"
+                    ></div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
           </div>
 
           <!-- Nome e Badges -->

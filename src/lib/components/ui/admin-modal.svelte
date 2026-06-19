@@ -12,7 +12,7 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 animate-in fade-in duration-200">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 animate-in fade-in duration-200" onclick={onClose} onkeydown={(e) => { if (e.key === "Escape") onClose?.(); }} role="dialog">
     <div class="bg-white rounded-2xl border-2 border-slate-200 shadow-lg w-full max-w-lg mx-4 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 dark:bg-slate-900 dark:border-slate-700">
       <div class="flex items-center justify-between px-6 py-4 border-b-2 border-slate-100 dark:border-slate-700">
         <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h3>

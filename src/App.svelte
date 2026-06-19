@@ -1,8 +1,10 @@
 <script>
   import { onMount } from "svelte";
   import { Toaster } from "svelte-sonner";
+  import axios from "axios";
   import { authStore } from "./lib/state/auth-store";
   import { navigateTo } from "./lib/utils/navigate";
+  import { getMe } from "./lib/utils/auth-api";
 
   import SignIn from "./routes/auth/sign-in.svelte";
   import Otp from "./routes/auth/otp.svelte";
@@ -18,57 +20,55 @@
   }
 
   onMount(() => {
-    window.addEventListener("popstate", onNavigate);
-    return () => window.removeEventListener("popstate", onNavigate);
+    if ($authStore.accessToken && !$authStore.user) {
+      getMe()
+        .then((user) => authStore.setUser(user))
+        .catch((err) => {
+          if (axios.isAxiosError(err) && err.response?.status === 401) {
+            authStore.reset();
+          }
+        });
+    }
+  });
+
+  $effect(() => {
+    const path = currentPath;
+    const token = $authStore.accessToken;
+
+    if ((path === "/sign-in" || path === "/otp" || path === "/forgot-password") && token) {
+      navigateTo("/stock");
+    } else if (!token && path !== "/sign-in" && path !== "/otp" && path !== "/forgot-password") {
+      navigateTo("/sign-in");
+    } else if (path === "/" && token) {
+      navigateTo("/stock");
+    }
   });
 
   const route = $derived.by(() => {
     const accessToken = $authStore.accessToken;
 
-    // Public auth routes — redirect to /stock if already logged in
     if (currentPath === "/sign-in") {
-      if (accessToken) {
-        navigateTo("/stock");
-        return { component: StockPage, props: {} };
-      }
-      return { component: SignIn, props: {} };
+      return { component: accessToken ? StockPage : SignIn, props: {} };
     }
     if (currentPath === "/otp") {
-      if (accessToken) {
-        navigateTo("/stock");
-        return { component: StockPage, props: {} };
-      }
-      return { component: Otp, props: {} };
+      return { component: accessToken ? StockPage : Otp, props: {} };
     }
     if (currentPath === "/forgot-password") {
-      if (accessToken) {
-        navigateTo("/stock");
-        return { component: StockPage, props: {} };
-      }
-      return { component: ForgotPassword, props: {} };
+      return { component: accessToken ? StockPage : ForgotPassword, props: {} };
     }
 
-    // Protected routes — redirect to /sign-in if no token
     if (!accessToken) {
-      navigateTo("/sign-in");
       return { component: SignIn, props: {} };
     }
 
-    // Stock page
-    if (currentPath === "/") {
-      navigateTo("/stock");
-      return { component: StockPage, props: {} };
-    }
-    if (currentPath === "/stock") {
+    if (currentPath === "/" || currentPath === "/stock") {
       return { component: StockPage, props: {} };
     }
 
-    // Admin routes
     if (currentPath.startsWith("/admin")) {
       return { component: AdminLayout, props: {} };
     }
 
-    // Fallback
     return { component: NotFound, props: {} };
   });
 </script>

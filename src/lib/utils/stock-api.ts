@@ -1,5 +1,5 @@
 import { apiClient, Routes } from "@/lib/utils/api-client";
-import type { ProductStock, StockFamily, StockReservation } from "./stock-types";
+import type { ProductStock, StockCategory, StockFamily, StockReservation } from "./stock-types";
 
 export async function getProducts(): Promise<ProductStock[]> {
   const { data } = await apiClient.get<{ products: ProductStock[] }>(
@@ -13,6 +13,13 @@ export async function getFamilies(): Promise<StockFamily[]> {
     Routes.stock.families
   );
   return data.families;
+}
+
+export async function getCategories(): Promise<StockCategory[]> {
+  const { data } = await apiClient.get<{ categories: StockCategory[] }>(
+    Routes.stock.categories
+  );
+  return data.categories;
 }
 
 export async function createFamily(data: {
@@ -78,7 +85,14 @@ export async function createProduct(formData: FormData): Promise<any> {
   const { data } = await apiClient.post<any>(
     Routes.stock.productCreate,
     formData,
-    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return data;
+}
+
+export async function updateProduct(id: number, formData: FormData): Promise<any> {
+  const { data } = await apiClient.patch<any>(
+    Routes.stock.productDetail(id),
+    formData,
   );
   return data;
 }
