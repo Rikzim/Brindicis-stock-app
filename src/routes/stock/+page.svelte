@@ -37,7 +37,7 @@
   });
 
   let page = $state(getNumberParam("page", 1));
-  let size = $state(getNumberParam("size", 32));
+  let size = $state(getNumberParam("size", 64));
   let searchQuery = $state(getStringParam("search", ""));
 
   const defaultFilters = () => ({
@@ -99,7 +99,7 @@
   $effect(() => {
     writeSearchParams({
       page: page > 1 ? page : undefined,
-      size: size !== 32 ? size : undefined,
+      size: size !== 64 ? size : undefined,
       search: searchQuery || undefined,
       familia: appliedFilters.familia || undefined,
       disponibilidade:

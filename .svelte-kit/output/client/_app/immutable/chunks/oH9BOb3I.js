@@ -1,1 +1,0 @@
-const e={Pending:0,Confirmed:1};function r(n){return n===e.Pending?{label:"Pendente",variant:"warning"}:n===e.Confirmed?{label:"Confirmada",variant:"success"}:{label:"Cancelada",variant:"destructive"}}export{r};

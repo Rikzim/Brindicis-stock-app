@@ -47,6 +47,6 @@ declare module "$app/types" {
 		};
 		Pathname(): "/" | "/admin" | "/admin/familias" | "/admin/fornecedores" | "/admin/reservas" | "/admin/stock" | "/forgot-password" | "/otp" | "/sign-in" | "/stock";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): string & {};
+		Asset(): "/favicon.svg" | string & {};
 	}
 }

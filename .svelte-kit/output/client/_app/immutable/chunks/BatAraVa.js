@@ -1,1 +1,0 @@
-import{l as n,m as s,u as o,o as c,n as i}from"./Dcpny2Ds.js";function m(t,u){let r=n(s(t())),e=null;return o(()=>{const a=t();return e&&clearTimeout(e),e=setTimeout(()=>{i(r,a,!0)},u),()=>{e&&clearTimeout(e)}}),{get current(){return c(r)}}}export{m as c};

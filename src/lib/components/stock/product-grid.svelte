@@ -9,7 +9,7 @@
     isLoading = false,
     selectedId = $bindable<number | null>(null),
     page = $bindable(1),
-    size = $bindable(32),
+    size = $bindable(64),
     pageSizeOptions = [64, 96, 128],
     onPageChange = () => {},
   }: {

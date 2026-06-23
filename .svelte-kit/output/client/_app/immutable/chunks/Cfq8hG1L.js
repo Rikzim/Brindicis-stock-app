@@ -1,1 +1,0 @@
-import{a}from"./BfJ3XApL.js";import{R as n}from"./D-n24-XC.js";async function r(t,o){const{data:i}=await a.post(n.auth.login,{email:t,password:o});return i}async function u(){const{data:t}=await a.get(n.auth.me);return t}export{u as g,r as l};
