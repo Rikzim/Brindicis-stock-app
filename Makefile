@@ -21,8 +21,14 @@ status:
 #  FRONTEND
 # ─────────────────────────────────────────────────────────────
 
-gen-routes:
-	docker-compose exec -T -w /app frontend npm run gen-routes
+check:
+	docker-compose exec -T -w /app frontend npm run check
+
+lint:
+	docker-compose exec -T -w /app frontend npm run lint
+
+format:
+	docker-compose exec -T -w /app frontend npm run format
 
 # ─────────────────────────────────────────────────────────────
 #  INFO
@@ -43,12 +49,14 @@ help:
 	@echo "  make down        Stop services"
 	@echo "  make build       Rebuild + start"
 	@echo "  make logs        Follow logs"
-	@echo "  make status      Show status"
+	@echo "  make status      Show services"
 	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "  FRONTEND"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "  make gen-routes  Regenerate routeTree.gen.ts"
+	@echo "  make check       Run svelte-check"
+	@echo "  make lint        Run eslint"
+	@echo "  make format      Run prettier --write"
 	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "  INFO"
@@ -56,4 +64,4 @@ help:
 	@echo "  make links       Show URLs"
 	@echo "  make help        Show this help"
 
-.PHONY: up down build logs status gen-routes links help
+.PHONY: up down build logs status check lint format links help

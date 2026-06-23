@@ -1,4 +1,8 @@
+import { goto } from "$app/navigation";
+import { browser } from "$app/environment";
+
 export function navigateTo(path: string) {
-  window.history.pushState({}, "", path);
-  queueMicrotask(() => window.dispatchEvent(new Event("popstate")));
+  if (browser) {
+    void goto(path);
+  }
 }

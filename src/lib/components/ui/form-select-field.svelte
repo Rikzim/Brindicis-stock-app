@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import SearchableSelect from "./searchable-select.svelte";
   import FormField from "./form-field.svelte";
 
@@ -9,15 +9,10 @@
     options = [],
     placeholder = undefined,
     disabled = false,
+    class: className = "",
   } = $props();
 </script>
 
 <FormField {label} for={id}>
-  <SearchableSelect
-    {id}
-    bind:value
-    {options}
-    {placeholder}
-    {disabled}
-  />
+  <SearchableSelect {id} bind:value {options} {placeholder} {disabled} class={className} />
 </FormField>

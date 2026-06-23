@@ -1,27 +1,54 @@
-<script>
-  import { X, Plus, Image, Loader2 } from "@/lib/utils/icon-map";
-  import { createProduct, updateProduct, getCategories, getFamilies } from "@/lib/utils/stock-api";
-  import AuthedImage from "@/lib/components/ui/authed-image.svelte";
-  import { createAsyncStore } from "@/lib/state/async-store.svelte";
+<script lang="ts">
+  import { X, Plus, Loader2 } from "lucide-svelte";
+  import { createProduct, updateProduct, getCategories, getFamilies } from "$lib/utils/stock-api";
+  import { createAsyncStore } from "$lib/state/async-store.svelte";
   import { toast } from "svelte-sonner";
-  import Button from "@/lib/components/ui/button.svelte";
-  import Input from "@/lib/components/ui/input.svelte";
-  import FormField from "@/lib/components/ui/form-field.svelte";
-  import SearchableSelect from "@/lib/components/ui/searchable-select.svelte";
+  import Button from "$lib/components/ui/button.svelte";
+  import Input from "$lib/components/ui/input.svelte";
+  import FormField from "$lib/components/ui/form-field.svelte";
+  import SearchableSelect from "$lib/components/ui/searchable-select.svelte";
+  import ProductVariantsEditor from "./product-variants-editor.svelte";
+
+  type VariantSize = { size: string; quantity: string; id: number | null };
+  type Variant = {
+    id: number | null;
+    color: string;
+    cx: string;
+    drawer: string;
+    quantity: string;
+    reserved: string;
+    sizes: VariantSize[];
+    images: File[];
+    previews: string[];
+    existingImages: string[];
+  };
 
   let {
     open = false,
     onClose = () => {},
     onSuccess = () => {},
-    fornecedores = [],
-    editProduct = null,
+    fornecedores = [] as string[],
+    editProduct = null as Record<string, any> | null,
+  }: {
+    open?: boolean;
+    onClose?: () => void;
+    onSuccess?: () => void;
+    fornecedores?: string[];
+    editProduct?: Record<string, any> | null;
   } = $props();
 
   const categoriesStore = createAsyncStore(getCategories);
   const familiesStore = createAsyncStore(getFamilies);
 
+  $effect(() => {
+    if (open || editProduct) {
+      categoriesStore.refetch();
+      familiesStore.refetch();
+    }
+  });
+
   let isLoading = $state(false);
-  let errors = $state({});
+  let errors = $state<Record<string, string>>({});
 
   let isEditMode = $derived(!!editProduct);
 
@@ -37,19 +64,19 @@
         pc: String(editProduct.pc || "0"),
         pvp: String(editProduct.pvp || "0"),
       };
-      const byColor = new Map();
+      const byColor = new Map<string, any[]>();
       for (const v of editProduct.variants || []) {
         if (!byColor.has(v.color)) {
           byColor.set(v.color, []);
         }
-        byColor.get(v.color).push(v);
+        byColor.get(v.color)!.push(v);
       }
-      const mapped = [];
+      const mapped: Variant[] = [];
       for (const [, group] of byColor) {
         const first = group[0];
         const images = (editProduct.images || [])
-          .filter((img) => img.color === first.color)
-          .map((img) => img.url);
+          .filter((img: any) => img.color === first.color)
+          .map((img: any) => img.url);
         const hasSizes = group.some((g) => g.size !== null);
         if (hasSizes) {
           mapped.push({
@@ -96,14 +123,23 @@
     pvp: "0",
   });
 
-  let variants = $state([
-    createEmptyVariant(),
-  ]);
-  let deletedVariantIds = $state([]);
-  let deletedSizes = $state([]);
+  let variants = $state<Variant[]>([createEmptyVariant()]);
+  let deletedVariantIds = $state<number[]>([]);
+  let deletedSizes = $state<{ color: string; size: string }[]>([]);
 
-  function createEmptyVariant() {
-    return { id: null, color: "", cx: "", drawer: "", quantity: "0", reserved: "0", sizes: [], images: [], previews: [], existingImages: [] };
+  function createEmptyVariant(): Variant {
+    return {
+      id: null,
+      color: "",
+      cx: "",
+      drawer: "",
+      quantity: "0",
+      reserved: "0",
+      sizes: [],
+      images: [],
+      previews: [],
+      existingImages: [],
+    };
   }
 
   let familyOptions = $derived(
@@ -130,9 +166,9 @@
   }
 
   function addSize(variantIndex) {
-    variants = variants.map((v, i) => i === variantIndex
-      ? { ...v, sizes: [...v.sizes, { size: "", quantity: "0", id: null }] }
-      : v);
+    variants = variants.map((v, i) =>
+      i === variantIndex ? { ...v, sizes: [...v.sizes, { size: "", quantity: "0", id: null }] } : v
+    );
   }
 
   function removeSize(variantIndex, sizeIndex) {
@@ -140,9 +176,9 @@
     if (size.id) {
       deletedSizes = [...deletedSizes, { color: variants[variantIndex].color, size: size.size }];
     }
-    variants = variants.map((v, i) => i === variantIndex
-      ? { ...v, sizes: v.sizes.filter((_, j) => j !== sizeIndex) }
-      : v);
+    variants = variants.map((v, i) =>
+      i === variantIndex ? { ...v, sizes: v.sizes.filter((_, j) => j !== sizeIndex) } : v
+    );
   }
 
   function revokePreviews(index) {
@@ -151,34 +187,34 @@
     }
   }
 
-  function handleImageSelect(variantIndex, e) {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    revokePreviews(variantIndex);
-
+  function addImage(variantIndex: number, files: File[]) {
     const newPreviews = files.map((f) => URL.createObjectURL(f));
-
-    variants = variants.map((v, i) => i === variantIndex ? {
-      ...v,
-      images: [...v.images, ...files],
-      previews: [...v.previews, ...newPreviews],
-    } : v);
-
-    e.target.value = "";
+    variants = variants.map((v, i) =>
+      i === variantIndex
+        ? {
+            ...v,
+            images: [...v.images, ...files],
+            previews: [...v.previews, ...newPreviews],
+          }
+        : v
+    );
   }
 
-  function removeImage(variantIndex, imageIndex) {
+  function removeImage(variantIndex: number, imageIndex: number) {
     URL.revokeObjectURL(variants[variantIndex].previews[imageIndex]);
-    variants = variants.map((v, i) => i === variantIndex ? {
-      ...v,
-      images: v.images.filter((_, j) => j !== imageIndex),
-      previews: v.previews.filter((_, j) => j !== imageIndex),
-    } : v);
+    variants = variants.map((v, i) =>
+      i === variantIndex
+        ? {
+            ...v,
+            images: v.images.filter((_, j) => j !== imageIndex),
+            previews: v.previews.filter((_, j) => j !== imageIndex),
+          }
+        : v
+    );
   }
 
   function validate() {
-    const errs = {};
+    const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = "Nome é obrigatório";
     if (!form.ref.trim()) errs.ref = "Referência é obrigatória";
     if (!form.categoryId) errs.categoryId = "Categoria é obrigatória";
@@ -240,7 +276,7 @@
         }
       });
 
-      if (isEditMode) {
+      if (isEditMode && editProduct) {
         await updateProduct(editProduct.id, fd);
         toast.success("Produto atualizado com sucesso!");
       } else {
@@ -250,7 +286,7 @@
       resetForm();
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Product save error:", err);
       console.error("Response data:", err?.response?.data);
       const msg =
@@ -265,10 +301,17 @@
   }
 
   function resetForm() {
-    for (const v of variants) {
-      revokePreviews(variants.indexOf(v));
-    }
-    form = { type: "", categoryId: "", familyId: "", name: "", description: "", ref: "", pc: "0", pvp: "0" };
+    variants.forEach((_, i) => revokePreviews(i));
+    form = {
+      type: "",
+      categoryId: "",
+      familyId: "",
+      name: "",
+      description: "",
+      ref: "",
+      pc: "0",
+      pvp: "0",
+    };
     variants = [createEmptyVariant()];
     deletedVariantIds = [];
     deletedSizes = [];
@@ -281,7 +324,11 @@
   }
 </script>
 
-<svelte:window onkeydown={(e) => { if (e.key === "Escape") handleClose(); }} />
+<svelte:window
+  onkeydown={(e) => {
+    if (e.key === "Escape") handleClose();
+  }}
+/>
 
 {#if open}
   {#if isEditMode && !editProduct}
@@ -291,238 +338,158 @@
       </div>
     </div>
   {:else}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 animate-in fade-in duration-200" onclick={handleClose} onkeydown={(e) => { if (e.key === "Escape") handleClose(); }} role="dialog">
-      <div class="bg-white rounded-2xl border-2 border-slate-200 shadow-lg w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 dark:bg-slate-900 dark:border-slate-700" onclick={(e) => e.stopPropagation()}>
-
-      <!-- Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b-2 border-slate-100 dark:border-slate-700 shrink-0">
-        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">{isEditMode ? "Editar Produto" : "Adicionar Produto"}</h3>
-        <Button variant="ghost" size="icon" onclick={handleClose} class="size-7">
-          <X class="size-4" />
-        </Button>
-      </div>
-
-      <!-- Body -->
-      <form id="add-product-form" onsubmit={handleSubmit} class="flex-1 overflow-y-auto px-6 py-5 space-y-0">
-
-        <!-- Dados Gerais -->
-        <div class="space-y-4 pb-5 border-b-2 border-slate-100 dark:border-slate-700">
-          <span class="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest dark:text-amber-400">
-            Dados Gerais
-          </span>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Fornecedor" for="ap-type">
-              <SearchableSelect
-                id="ap-type"
-                bind:value={form.type}
-                options={fornecedorOptions}
-                placeholder="Selecione um Fornecedor"
-                searchPlaceholder="Procurar fornecedor..."
-                emptyMessage="Nenhum fornecedor encontrado."
-              />
-            </FormField>
-            <FormField label="Categoria" for="ap-category" error={errors.categoryId}>
-              <SearchableSelect
-                id="ap-category"
-                bind:value={form.categoryId}
-                options={categoryOptions}
-                placeholder="Selecione uma Categoria"
-              />
-            </FormField>
-            <FormField label="Família" for="ap-family" error={errors.familyId}>
-              <SearchableSelect
-                id="ap-family"
-                bind:value={form.familyId}
-                options={familyOptions}
-                placeholder="Selecione uma Família"
-              />
-            </FormField>
-            <FormField label="Nome" for="ap-name" error={errors.name}>
-              <Input id="ap-name" placeholder="Nome do produto" bind:value={form.name} />
-            </FormField>
-            <FormField label="Referência" for="ap-ref" error={errors.ref}>
-              <Input id="ap-ref" placeholder="Ex: REF-001" bind:value={form.ref} />
-            </FormField>
-          </div>
-          <FormField label="Descrição" for="ap-desc">
-            <textarea
-              id="ap-desc"
-              rows="3"
-              placeholder="Descrição do produto..."
-              bind:value={form.description}
-              class="flex w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-500 resize-none"
-            ></textarea>
-          </FormField>
-        </div>
-
-        <!-- Variantes -->
-        <div class="space-y-3 py-5 border-b-2 border-slate-100 dark:border-slate-700">
-          <span class="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest dark:text-amber-400">
-            Variantes
-          </span>
-
-          {#each variants as variant, i (i)}
-            <div class="rounded-xl border-2 border-slate-100 bg-slate-50/50 p-4 space-y-3 dark:border-slate-700 dark:bg-slate-800/30 animate-in fade-in duration-200">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Variante #{i + 1}
-                </span>
-                <button
-                  type="button"
-                  onclick={() => removeVariant(i)}
-                  class="text-slate-400 hover:text-red-500 transition-colors"
-                >
-                  <X class="size-4" />
-                </button>
-              </div>
-
-              <div class="grid grid-cols-3 gap-3">
-                <FormField label="Cor" for="ap-vc-{i}" error={errors[`variant_${i}_color`]}>
-                  <Input id="ap-vc-{i}" placeholder="Ex: Vermelho" bind:value={variant.color} />
-                </FormField>
-                <FormField label="Caixa" for="ap-vcx-{i}">
-                  <Input id="ap-vcx-{i}" placeholder="CX" bind:value={variant.cx} />
-                </FormField>
-                <FormField label="Gaveta" for="ap-vd-{i}">
-                  <Input id="ap-vd-{i}" placeholder="Gaveta" bind:value={variant.drawer} />
-                </FormField>
-              </div>
-
-              <!-- Quantidade / Tamanhos -->
-              <div class="space-y-2">
-                {#if variant.sizes.length > 0}
-                  <div class="space-y-1.5">
-                    {#each variant.sizes as size, si (si)}
-                      <div class="flex items-center gap-2">
-                        <input
-                          type="text"
-                          placeholder="Tam."
-                          bind:value={size.size}
-                          class="w-16 rounded-md border border-slate-200 bg-transparent px-2 py-1.5 text-sm text-center dark:border-slate-700"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="Qtd"
-                          bind:value={size.quantity}
-                          class="w-20 rounded-md border border-slate-200 bg-transparent px-2 py-1.5 text-sm text-center dark:border-slate-700"
-                        />
-                        <button
-                          type="button"
-                          onclick={() => removeSize(i, si)}
-                          class="text-slate-400 hover:text-red-500 transition-colors"
-                        >
-                          <X class="size-4" />
-                        </button>
-                      </div>
-                    {/each}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onclick={() => addSize(i)}
-                      class="h-7 text-xs gap-1"
-                    >
-                      <Plus class="size-3" />
-                      <span>Adicionar Tamanho</span>
-                    </Button>
-                  </div>
-                {:else}
-                  <FormField label="Quantidade" for="ap-vq-{i}">
-                    <Input id="ap-vq-{i}" type="number" min="0" bind:value={variant.quantity} />
-                    <button
-                      type="button"
-                      onclick={() => addSize(i)}
-                      class="mt-1 text-xs text-amber-600 hover:text-amber-700 dark:text-amber-400 flex items-center gap-1"
-                    >
-                      <Plus class="size-3" />
-                      <span>Adicionar tamanhos</span>
-                    </button>
-                  </FormField>
-                {/if}
-              </div>
-
-              <!-- Images -->
-              <div class="space-y-2">
-                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Imagens</span>
-                <div class="flex flex-wrap gap-2">
-                  {#each variant.existingImages as url}
-                    <div class="size-16 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                      <AuthedImage path={url} width={200} alt="" class="size-full object-contain" />
-                    </div>
-                  {/each}
-                  {#each variant.previews as preview, imgIdx (imgIdx)}
-                    <div class="relative group size-16 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                      <img src={preview} alt="" class="size-full object-cover" />
-                      <button
-                        type="button"
-                        onclick={() => removeImage(i, imgIdx)}
-                        class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X class="size-4 text-white" />
-                      </button>
-                    </div>
-                  {/each}
-                  <label class="flex size-16 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 text-slate-400 transition-colors hover:border-amber-400 hover:text-amber-500 dark:border-slate-600 dark:hover:border-amber-400">
-                    <Image class="size-5 mb-0.5" />
-                    <span class="text-[9px] font-bold">+</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      class="hidden"
-                      onchange={(e) => handleImageSelect(i, e)}
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-          {/each}
-
-          <Button
-            type="button"
-            variant="outline"
-            onclick={addVariant}
-            class="w-full h-9 border-dashed border-2 border-slate-300 text-slate-500 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50/50 dark:border-slate-600 dark:text-slate-400"
+    <div
+      class="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/30 animate-in fade-in duration-200"
+      onclick={handleClose}
+      onkeydown={(e) => {
+        if (e.key === "Escape") handleClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-product-modal-title"
+      tabindex="-1"
+    >
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <div
+        class="bg-white rounded-none sm:rounded-2xl border-0 sm:border-2 border-slate-200 shadow-lg w-full sm:max-w-2xl sm:mx-4 sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 dark:bg-slate-900 sm:dark:border-slate-700"
+        onclick={(e) => e.stopPropagation()}
+        onkeydown={(e) => e.stopPropagation()}
+        role="document"
+      >
+        <!-- Header -->
+        <div
+          class="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b-2 border-slate-100 dark:border-slate-700 shrink-0"
+        >
+          <h3
+            id="add-product-modal-title"
+            class="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100"
           >
-            <Plus class="size-4" />
-            <span>Adicionar Cor</span>
+            {isEditMode ? "Editar Produto" : "Adicionar Produto"}
+          </h3>
+          <Button
+            variant="ghost"
+            size="icon"
+            onclick={handleClose}
+            class="size-10"
+            aria-label="Fechar"
+          >
+            <X class="size-4" />
           </Button>
         </div>
 
-        <!-- Preço -->
-        <div class="space-y-4 pt-5">
-          <span class="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest dark:text-amber-400">
-            Preço
-          </span>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="P. Custo (€)" for="ap-pc">
-              <Input id="ap-pc" type="number" step="0.01" min="0" bind:value={form.pc} />
-            </FormField>
-            <FormField label="PVP (€)" for="ap-pvp">
-              <Input id="ap-pvp" type="number" step="0.01" min="0" bind:value={form.pvp} />
+        <!-- Body -->
+        <form
+          id="add-product-form"
+          onsubmit={handleSubmit}
+          class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-0"
+        >
+          <!-- Dados Gerais -->
+          <div class="space-y-4 pb-5 border-b-2 border-slate-100 dark:border-slate-700">
+            <span
+              class="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest dark:text-amber-400"
+            >
+              Dados Gerais
+            </span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="Fornecedor" for="ap-type">
+                <SearchableSelect
+                  id="ap-type"
+                  bind:value={form.type}
+                  options={fornecedorOptions}
+                  placeholder="Selecione um Fornecedor"
+                  searchPlaceholder="Procurar fornecedor..."
+                  emptyMessage="Nenhum fornecedor encontrado."
+                />
+              </FormField>
+              <FormField label="Categoria" for="ap-category" error={errors.categoryId}>
+                <SearchableSelect
+                  id="ap-category"
+                  bind:value={form.categoryId}
+                  options={categoryOptions}
+                  placeholder="Selecione uma Categoria"
+                />
+              </FormField>
+              <FormField label="Família" for="ap-family" error={errors.familyId}>
+                <SearchableSelect
+                  id="ap-family"
+                  bind:value={form.familyId}
+                  options={familyOptions}
+                  placeholder="Selecione uma Família"
+                />
+              </FormField>
+              <FormField label="Nome" for="ap-name" error={errors.name}>
+                <Input id="ap-name" placeholder="Nome do produto" bind:value={form.name} />
+              </FormField>
+              <FormField label="Referência" for="ap-ref" error={errors.ref}>
+                <Input id="ap-ref" placeholder="Ex: REF-001" bind:value={form.ref} />
+              </FormField>
+            </div>
+            <FormField label="Descrição" for="ap-desc">
+              <textarea
+                id="ap-desc"
+                rows="3"
+                placeholder="Descrição do produto..."
+                bind:value={form.description}
+                class="flex w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-500 resize-none"
+              ></textarea>
             </FormField>
           </div>
-        </div>
-      </form>
 
-      <!-- Footer -->
-      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t-2 border-slate-100 dark:border-slate-700 shrink-0">
-        <Button variant="outline" onclick={handleClose} disabled={isLoading} class="h-10 px-4">
-          Cancelar
-        </Button>
-        <Button
-          type="submit"
-          form="add-product-form"
-          disabled={isLoading}
-          class="h-10 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] px-5 font-semibold shadow-none"
+          <!-- Variantes -->
+          <ProductVariantsEditor
+            {variants}
+            {errors}
+            onAddVariant={addVariant}
+            onRemoveVariant={removeVariant}
+            onAddSize={addSize}
+            onRemoveSize={removeSize}
+            onAddImage={addImage}
+            onRemoveImage={removeImage}
+          />
+
+          <!-- Preço -->
+          <div class="space-y-4 pt-5">
+            <span
+              class="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest dark:text-amber-400"
+            >
+              Preço
+            </span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="P. Custo (€)" for="ap-pc">
+                <Input id="ap-pc" type="number" step="0.01" min="0" bind:value={form.pc} />
+              </FormField>
+              <FormField label="PVP (€)" for="ap-pvp">
+                <Input id="ap-pvp" type="number" step="0.01" min="0" bind:value={form.pvp} />
+              </FormField>
+            </div>
+          </div>
+        </form>
+
+        <!-- Footer -->
+        <div
+          class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t-2 border-slate-100 dark:border-slate-700 shrink-0 pb-safe"
         >
-          {#if isLoading}
-            <Loader2 class="animate-spin" />
-          {/if}
-          {isEditMode ? "Salvar Alterações" : "Adicionar Produto"}
-        </Button>
+          <Button
+            variant="outline"
+            onclick={handleClose}
+            disabled={isLoading}
+            class="h-12 sm:h-10 px-4"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="add-product-form"
+            disabled={isLoading}
+            class="h-12 sm:h-10 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] px-5 font-semibold shadow-none"
+          >
+            {#if isLoading}
+              <Loader2 class="animate-spin" />
+            {/if}
+            {isEditMode ? "Salvar Alterações" : "Adicionar Produto"}
+          </Button>
+        </div>
       </div>
     </div>
-  </div>
-{/if}
+  {/if}
 {/if}

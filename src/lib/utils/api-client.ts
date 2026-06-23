@@ -1,9 +1,10 @@
 import axios from "axios";
-import { Routes } from "./routes";
-import { authStore, getAuthToken } from "@/lib/state/auth-store";
-import { navigateTo } from "@/lib/utils/navigate";
+import { goto } from "$app/navigation";
+import { browser } from "$app/environment";
+import { authStore, getAuthToken } from "$lib/state/auth-store";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL =
+  import.meta.env.PUBLIC_API_URL || import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -24,11 +25,9 @@ apiClient.interceptors.response.use(
       const url = error.config?.url ?? "";
       if (!url.includes("/auth/login")) {
         authStore.reset();
-        navigateTo("/sign-in");
+        if (browser) goto("/sign-in", { replaceState: true });
       }
     }
     return Promise.reject(error);
   }
 );
-
-export { Routes };

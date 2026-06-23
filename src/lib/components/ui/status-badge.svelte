@@ -1,5 +1,5 @@
-<script>
-  import { cn } from "@/lib/utils";
+<script lang="ts">
+  import { cn } from "$lib/utils";
 
   let { status = "", class: className = "" } = $props();
 
@@ -18,7 +18,9 @@
   };
 
   let key = $derived(status?.toLowerCase().trim() || "");
-  let style = $derived(statusStyles[key] ?? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400");
+  let style = $derived(
+    statusStyles[key] ?? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+  );
 </script>
 
 <span

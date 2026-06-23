@@ -1,4 +1,4 @@
-import { writable, get } from "svelte/store";
+import { writable } from "svelte/store";
 
 interface SettingsState {
   theme: "light" | "dark";
@@ -22,6 +22,7 @@ const getStoredPanelPosition = (): "left" | "right" => {
 };
 
 function applyTheme(theme: "light" | "dark") {
+  if (typeof document === "undefined") return;
   if (theme === "dark") {
     document.documentElement.classList.add("dark");
   } else {
@@ -33,7 +34,7 @@ function createSettingsStore() {
   const initialTheme = getStoredTheme();
   applyTheme(initialTheme);
 
-  const { subscribe, update, set } = writable<SettingsState>({
+  const { subscribe, update } = writable<SettingsState>({
     theme: initialTheme,
     panelPosition: getStoredPanelPosition(),
   });

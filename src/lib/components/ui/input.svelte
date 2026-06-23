@@ -1,5 +1,5 @@
-<script>
-  import { cn } from "@/lib/utils";
+<script lang="ts">
+  import { cn } from "$lib/utils";
 
   let {
     type = "text",

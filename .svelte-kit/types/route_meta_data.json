@@ -1,0 +1,35 @@
+{
+	"/": [
+		"src/routes/+page.ts",
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/admin": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/admin/familias": [
+		"src/routes/+layout.ts"
+	],
+	"/admin/fornecedores": [
+		"src/routes/+layout.ts"
+	],
+	"/admin/reservas": [
+		"src/routes/+layout.ts"
+	],
+	"/admin/stock": [
+		"src/routes/+layout.ts"
+	],
+	"/forgot-password": [
+		"src/routes/+layout.ts"
+	],
+	"/otp": [
+		"src/routes/+layout.ts"
+	],
+	"/sign-in": [
+		"src/routes/+layout.ts"
+	],
+	"/stock": [
+		"src/routes/+layout.ts"
+	]
+}

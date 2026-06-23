@@ -1,34 +1,21 @@
-import { apiClient } from "@/lib/utils/api-client";
+import { apiClient } from "$lib/utils/api-client";
+import { Routes } from "./routes";
 
-export interface LoginResponse {
+export type LoginResponse = {
   accessToken: string;
-  tokenType: "Bearer";
-  expiresIn: number;
-}
+  tokenType?: string;
+  expiresIn?: number;
+};
 
-export interface SafeUser {
-  id: number;
-  name: string;
-  email: string;
-  image_path: string | null;
-  isActive: boolean;
-  lastLogin: string | null;
-  createdAt: string;
-  updatedAt: string;
-  role: {
-    id: number;
-    code: string;
-    name: string;
-  };
-  permissions?: string[];
-}
-
-export async function login(email: string, password: string) {
-  const { data } = await apiClient.post("/auth/login", { email, password });
+export async function login(email: string, password: string): Promise<LoginResponse> {
+  const { data } = await apiClient.post<LoginResponse>(Routes.auth.login, {
+    email,
+    password,
+  });
   return data;
 }
 
-export async function getMe() {
-  const { data } = await apiClient.get("/auth/me");
+export async function getMe<T = unknown>(): Promise<T> {
+  const { data } = await apiClient.get<T>(Routes.auth.me);
   return data;
 }

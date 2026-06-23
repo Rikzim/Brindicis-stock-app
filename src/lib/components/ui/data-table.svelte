@@ -1,14 +1,39 @@
-<script>
-  import { Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "@/lib/utils/icon-map";
-  import Button from "./button.svelte";
+<script lang="ts">
+  import { Loader2 } from "lucide-svelte";
+  import Pagination from "./pagination.svelte";
+
+  type Column = {
+    key: string;
+    header: string;
+    className?: string;
+    headerClassName?: string;
+  };
+
+  type Props = {
+    columns: Column[];
+    data: any[];
+    isLoading?: boolean;
+    loadingMessage?: string;
+    emptyMessage?: string;
+    rowKey?: (row: any) => any;
+    onRowClick?: (row: any) => void;
+    pageSize?: number;
+    showPagination?: boolean;
+    pageSizeOptions?: number[];
+    cell?: any;
+    totalRows: number;
+    page?: number;
+    size?: number;
+    onPageChange?: (page: number, size: number) => void;
+  };
 
   let {
-    columns = [],
-    data = [],
+    columns,
+    data,
     isLoading = false,
     loadingMessage = "A carregar...",
     emptyMessage = "Sem dados disponíveis.",
-    rowKey = (row) => row.id,
+    rowKey = (row: any) => row.id,
     onRowClick = undefined,
     pageSize = 25,
     showPagination = true,
@@ -18,31 +43,23 @@
     page = $bindable(1),
     size = $bindable(pageSize),
     onPageChange,
-  } = $props();
-
-  let totalPages = $derived(Math.max(1, Math.ceil(totalRows / size)));
-  let safePage = $derived(Math.max(1, Math.min(page, totalPages)));
-  let showBar = $derived(showPagination && totalRows > 0);
-
-  function goToPage(newPage) {
-    page = newPage;
-    onPageChange?.(page, size);
-  }
-
-  function changeSize(newSize) {
-    size = newSize;
-    page = 1;
-    onPageChange?.(page, size);
-  }
+  }: Props = $props();
 </script>
 
-<div class="bg-white rounded-2xl border border-slate-200/60 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80 overflow-hidden flex flex-col flex-1 min-h-0">
+<div
+  class="bg-white rounded-2xl border border-slate-200/60 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80 overflow-hidden flex flex-col flex-1 min-h-0"
+>
   <div class="flex-1 overflow-y-auto overflow-x-auto min-h-0">
     <table class="w-full text-left border-collapse">
       <thead class="sticky top-0 z-10 bg-white dark:bg-slate-900">
-        <tr class="bg-slate-50/50 border-b border-slate-100 dark:bg-slate-900/50 dark:border-slate-800/80">
+        <tr
+          class="bg-slate-50/50 border-b border-slate-100 dark:bg-slate-900/50 dark:border-slate-800/80"
+        >
           {#each columns as col (col.key)}
-            <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 {col.headerClassName ?? ''}">
+            <th
+              class="px-3 sm:px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 {col.headerClassName ??
+                ''}"
+            >
               {col.header}
             </th>
           {/each}
@@ -61,22 +78,37 @@
         {:else if data.length === 0}
           <tr>
             <td colspan={columns.length} class="px-6 py-24 text-center">
-              <span class="text-sm font-medium text-slate-400 dark:text-slate-500">{emptyMessage}</span>
+              <span class="text-sm font-medium text-slate-400 dark:text-slate-500"
+                >{emptyMessage}</span
+              >
             </td>
           </tr>
         {:else}
           {#each data as row, i (rowKey(row))}
             <tr
-              class="border-b border-slate-100 last:border-0 transition-colors dark:border-slate-800/60 {onRowClick ? 'cursor-pointer' : ''} hover:bg-slate-50/30 dark:hover:bg-slate-800/10 {i % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/20 dark:bg-slate-800/5'}"
+              class="border-b border-slate-100 last:border-0 transition-colors dark:border-slate-800/60 {onRowClick
+                ? 'cursor-pointer'
+                : ''} hover:bg-slate-50/30 active:bg-slate-50/50 dark:hover:bg-slate-800/10 dark:active:bg-slate-800/20 {i %
+                2 ===
+              0
+                ? 'bg-white dark:bg-slate-900'
+                : 'bg-slate-50/20 dark:bg-slate-800/5'}"
               onclick={() => onRowClick?.(row)}
+              onkeydown={(e) => {
+                if (onRowClick && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onRowClick(row);
+                }
+              }}
+              role={onRowClick ? "button" : undefined}
+              tabindex={onRowClick ? 0 : undefined}
             >
               {#each columns as col (col.key)}
-                <td class="px-5 py-3 text-sm {col.className ?? 'text-slate-800 dark:text-slate-200'}">
-                  {#if cell}
-                    {@render cell(row, col)}
-                  {:else if col.render}
-                    {@html col.render(row)}
-                  {/if}
+                <td
+                  class="px-3 sm:px-5 py-3 text-sm {col.className ??
+                    'text-slate-800 dark:text-slate-200'}"
+                >
+                  {#if cell}{@render cell(row, col)}{/if}
                 </td>
               {/each}
             </tr>
@@ -86,40 +118,7 @@
     </table>
   </div>
 
-  {#if showBar}
-    <div class="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-900 shrink-0">
-      <div class="flex items-center gap-2">
-        <select
-          value={size}
-          onchange={(e) => changeSize(Number(e.target.value))}
-          class="h-7 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
-        >
-          {#each pageSizeOptions as opt}
-            <option value={opt}>{opt}</option>
-          {/each}
-        </select>
-        <span class="text-xs text-slate-400 dark:text-slate-500">linhas por página · {totalRows} registos</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <span class="text-xs text-slate-500 dark:text-slate-400 mr-2">
-          Página {safePage} de {totalPages}
-        </span>
-        <Button variant="outline" size="icon" disabled={safePage <= 1} onclick={() => goToPage(1)} class="size-7">
-          <ChevronsLeft class="size-3.5" />
-        </Button>
-        <Button variant="outline" size="icon" disabled={safePage <= 1} onclick={() => goToPage(Math.max(1, page - 1))} class="size-7">
-          <ChevronLeft class="size-3.5" />
-        </Button>
-        <Button variant="outline" size="icon" class="size-7 bg-amber-400 text-[#1F2937] hover:bg-amber-500 border-none cursor-default text-xs font-bold">
-          {safePage}
-        </Button>
-        <Button variant="outline" size="icon" disabled={safePage >= totalPages} onclick={() => goToPage(Math.min(totalPages, page + 1))} class="size-7">
-          <ChevronRight class="size-3.5" />
-        </Button>
-        <Button variant="outline" size="icon" disabled={safePage >= totalPages} onclick={() => goToPage(totalPages)} class="size-7">
-          <ChevronsRight class="size-3.5" />
-        </Button>
-      </div>
-    </div>
+  {#if showPagination}
+    <Pagination bind:page bind:size {totalRows} {pageSizeOptions} {onPageChange} />
   {/if}
 </div>

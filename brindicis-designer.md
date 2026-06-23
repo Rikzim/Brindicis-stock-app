@@ -16,34 +16,34 @@ Esta cor será usada em todos os elementos interativos: botões, nav items ativo
 
 Uma vez escolhida a cor hex (ex: `#FBBF24`), mapeia para as variantes Tailwind:
 
-| Elemento | Classe Tailwind |
-|----------|-----------------|
-| Fundo botão principal | `bg-[{cor}]` |
-| Hover botão | `hover:bg-[{cor}-600]` (ou variante mais escura) |
-| Texto labels/nav ativo | `text-[{cor}-600]` |
-| Fundo nav ativo | `bg-[{cor}-50]/40` |
-| Fundo ícones | `bg-[{cor}-50]` |
-| Toggle ativo | `bg-[{cor}-400]` |
-| Focus ring | `focus-visible:ring-[{cor}-400]` |
-| Dark mode texto | `dark:text-[{cor}-400]` |
-| Dark mode fundo | `dark:bg-[{cor}-950]/20` |
-| Borda card selecionado | `border-[{cor}-400]` |
+| Elemento               | Classe Tailwind                                  |
+| ---------------------- | ------------------------------------------------ |
+| Fundo botão principal  | `bg-[{cor}]`                                     |
+| Hover botão            | `hover:bg-[{cor}-600]` (ou variante mais escura) |
+| Texto labels/nav ativo | `text-[{cor}-600]`                               |
+| Fundo nav ativo        | `bg-[{cor}-50]/40`                               |
+| Fundo ícones           | `bg-[{cor}-50]`                                  |
+| Toggle ativo           | `bg-[{cor}-400]`                                 |
+| Focus ring             | `focus-visible:ring-[{cor}-400]`                 |
+| Dark mode texto        | `dark:text-[{cor}-400]`                          |
+| Dark mode fundo        | `dark:bg-[{cor}-950]/20`                         |
+| Borda card selecionado | `border-[{cor}-400]`                             |
 
 **Exemplo com amarelo `#FBBF24`:**
 
-| Elemento | Classe |
-|----------|--------|
-| Fundo botão | `bg-[#FBBF24]` |
-| Hover | `hover:bg-amber-500` |
-| Labels | `text-amber-600` |
-| Nav ativo | `text-amber-600 bg-amber-50/40` |
-| Toggle | `bg-amber-400` |
-| Focus | `ring-amber-400` |
+| Elemento    | Classe                          |
+| ----------- | ------------------------------- |
+| Fundo botão | `bg-[#FBBF24]`                  |
+| Hover       | `hover:bg-amber-500`            |
+| Labels      | `text-amber-600`                |
+| Nav ativo   | `text-amber-600 bg-amber-50/40` |
+| Toggle      | `bg-amber-400`                  |
+| Focus       | `ring-amber-400`                |
 
 ### Texto em Fundo da Cor Principal
 
-| Elemento | Classe |
-|----------|--------|
+| Elemento    | Classe                               |
+| ----------- | ------------------------------------ |
 | Texto botão | `text-[#1F2937]` (cinza escuro fixo) |
 
 **Regra:** Nunca usar texto branco em fundo da cor principal.
@@ -58,26 +58,26 @@ Todas as referências à cor principal usam o mapeamento da secção 0.
 
 ### Cores Neutras
 
-| Uso | Cor | Tailwind |
-|-----|-----|----------|
-| Fundo página | `#F3F4F6` | `bg-[#F3F4F6]` |
-| Fundo cards | `white` | `bg-white` |
-| Fundo secções | `slate-50` | `bg-slate-50` |
-| Bordas | `slate-200` | `border-slate-200` |
-| Labels | `slate-400` / `slate-500` | `text-slate-400` |
-| Texto principal | `slate-800` | `text-slate-800` |
-| Texto secundário | `slate-600` | `text-slate-600` |
+| Uso              | Cor                       | Tailwind           |
+| ---------------- | ------------------------- | ------------------ |
+| Fundo página     | `#F3F4F6`                 | `bg-[#F3F4F6]`     |
+| Fundo cards      | `white`                   | `bg-white`         |
+| Fundo secções    | `slate-50`                | `bg-slate-50`      |
+| Bordas           | `slate-200`               | `border-slate-200` |
+| Labels           | `slate-400` / `slate-500` | `text-slate-400`   |
+| Texto principal  | `slate-800`               | `text-slate-800`   |
+| Texto secundário | `slate-600`               | `text-slate-600`   |
 
 ### Dark Mode
 
-| Elemento | Classe |
-|----------|--------|
-| Borda | `dark:border-slate-700` |
-| Fundo card | `dark:bg-slate-900` |
-| Fundo secção | `dark:bg-slate-800/50` |
-| Texto principal | `dark:text-slate-100` |
-| Texto secundário | `dark:text-slate-400` |
-| Fundo input | `dark:bg-slate-950` |
+| Elemento         | Classe                  |
+| ---------------- | ----------------------- |
+| Borda            | `dark:border-slate-700` |
+| Fundo card       | `dark:bg-slate-900`     |
+| Fundo secção     | `dark:bg-slate-800/50`  |
+| Texto principal  | `dark:text-slate-100`   |
+| Texto secundário | `dark:text-slate-400`   |
+| Fundo input      | `dark:bg-slate-950`     |
 
 ---
 
@@ -146,7 +146,9 @@ rounded-full
 ### Títulos de Secção
 
 ```html
-<span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest dark:text-slate-400">
+<span
+  className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest dark:text-slate-400"
+>
   Nome da Secção
 </span>
 ```
@@ -154,25 +156,19 @@ rounded-full
 ### Títulos de Página
 
 ```html
-<h1 className="text-lg font-bold text-slate-800 dark:text-white">
-  Título
-</h1>
+<h1 className="text-lg font-bold text-slate-800 dark:text-white">Título</h1>
 ```
 
 ### Labels de Input
 
 ```html
-<label className="text-xs font-bold text-slate-600 dark:text-slate-300">
-  Label
-</label>
+<label className="text-xs font-bold text-slate-600 dark:text-slate-300"> Label </label>
 ```
 
 ### Texto de Valor
 
 ```html
-<span className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
-  Valor
-</span>
+<span className="text-sm font-extrabold text-slate-800 dark:text-slate-200"> Valor </span>
 ```
 
 ---
@@ -182,26 +178,31 @@ rounded-full
 ### Botão Principal (Cor Principal)
 
 ```html
-<Button className="h-10 bg-[{cor}] text-[#1F2937] hover:bg-[{cor}-hover] px-5 rounded-lg flex items-center gap-2 font-semibold shadow-none">
+<button
+  className="h-10 bg-[{cor}] text-[#1F2937] hover:bg-[{cor}-hover] px-5 rounded-lg flex items-center gap-2 font-semibold shadow-none"
+>
   <Icon className="size-4" />
   <span>Texto</span>
-</Button>
+</button>
 ```
 
 ### Botão Modal (Salvar/Fechar)
 
 ```html
-<Button className="h-10 bg-[{cor}-400] hover:bg-[{cor}-500] text-[#1F2937] px-5 font-semibold">
+<button className="h-10 bg-[{cor}-400] hover:bg-[{cor}-500] text-[#1F2937] px-5 font-semibold">
   Salvar
-</Button>
+</button>
 ```
 
 ### Botão Outline
 
 ```html
-<Button variant="outline" className="h-10 border-2 border-slate-300 hover:bg-slate-50 font-semibold dark:border-slate-600">
+<button
+  variant="outline"
+  className="h-10 border-2 border-slate-300 hover:bg-slate-50 font-semibold dark:border-slate-600"
+>
   Texto
-</Button>
+</button>
 ```
 
 ---
@@ -211,7 +212,9 @@ rounded-full
 ### PageCard (Container de Página)
 
 ```html
-<div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-700">
+<div
+  className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-700"
+>
   {conteúdo}
 </div>
 ```
@@ -229,7 +232,10 @@ Layout sectionado com separador visual:
   {/* Secção direita - Conteúdo */}
   <div className="flex-1 bg-white px-4 py-3">
     <p className="text-sm font-extrabold">{referência}</p>
-    <p className="text-sm"><span className="text-slate-500">Qtd: </span><span className="text-[{cor}-600] font-extrabold">{quantidade}</span></p>
+    <p className="text-sm">
+      <span className="text-slate-500">Qtd: </span
+      ><span className="text-[{cor}-600] font-extrabold">{quantidade}</span>
+    </p>
   </div>
 </button>
 ```
@@ -261,12 +267,12 @@ className="hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5"
 
   {/* Search - flex-1 */}
   <div className="flex-1 flex items-center px-6">
-    <Input />
+    <input />
   </div>
 
   {/* Botões */}
   <div className="flex items-center gap-1 px-4 shrink-0">
-    <Button />
+    <button />
   </div>
 </nav>
 ```
@@ -274,13 +280,11 @@ className="hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5"
 ### Dropdowns (Settings/Profile)
 
 ```html
-<div className="absolute right-4 top-[68px] z-50 w-64 rounded-2xl border-2 border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-  <div className="border-b-2 border-slate-100 dark:border-slate-700">
-    {/* Título */}
-  </div>
-  <div className="p-4">
-    {/* Conteúdo */}
-  </div>
+<div
+  className="absolute right-4 top-[68px] z-50 w-64 rounded-2xl border-2 border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800"
+>
+  <div className="border-b-2 border-slate-100 dark:border-slate-700">{/* Título */}</div>
+  <div className="p-4">{/* Conteúdo */}</div>
 </div>
 ```
 
@@ -291,17 +295,21 @@ className="hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5"
 ## 9. Sidebar
 
 ```html
-<aside className="w-[280px] bg-white rounded-2xl border-2 border-slate-200 shadow-sm flex flex-col justify-between p-4 dark:bg-slate-900 dark:border-slate-700">
+<aside
+  className="w-[280px] bg-white rounded-2xl border-2 border-slate-200 shadow-sm flex flex-col justify-between p-4 dark:bg-slate-900 dark:border-slate-700"
+>
   {/* Título secção */}
   <h3 className="text-[10px] font-extrabold uppercase tracking-widest text-[{cor}-600]">
     Navegação
   </h3>
 
   {/* Item ativo */}
-  <Link className="text-[{cor}-600] bg-[{cor}-50]/40 dark:text-[{cor}-400] dark:bg-[{cor}-950]/20">
+  <link
+    className="text-[{cor}-600] bg-[{cor}-50]/40 dark:text-[{cor}-400] dark:bg-[{cor}-950]/20"
+  />
 
   {/* Item inativo */}
-  <Link className="text-slate-500 hover:text-slate-800 hover:bg-slate-50">
+  <link className="text-slate-500 hover:text-slate-800 hover:bg-slate-50" />
 
   {/* Separador */}
   <div className="border-t-2 border-slate-200 dark:border-slate-700 my-2" />
@@ -315,7 +323,9 @@ className="hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5"
 ### DataTable
 
 ```html
-<div className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-700">
+<div
+  className="bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-700"
+>
   {/* Header */}
   <div className="bg-slate-100 px-4 py-2.5 text-xs font-extrabold uppercase">
     <span>Coluna</span>
@@ -331,9 +341,13 @@ className="hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5"
 ### Paginação
 
 ```html
-<div className="border-t-2 border-slate-200 bg-slate-50 px-6 py-4 dark:bg-slate-800 dark:border-slate-700">
+<div
+  className="border-t-2 border-slate-200 bg-slate-50 px-6 py-4 dark:bg-slate-800 dark:border-slate-700"
+>
   {/* Botão página ativa */}
-  <Button className="size-9 bg-[{cor}-400] hover:bg-[{cor}-500] text-[#1F2937] font-extrabold shadow-sm" />
+  <button
+    className="size-9 bg-[{cor}-400] hover:bg-[{cor}-500] text-[#1F2937] font-extrabold shadow-sm"
+  />
 </div>
 ```
 
@@ -343,23 +357,26 @@ className="hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5"
 
 ```html
 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-  <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg w-full max-w-lg dark:bg-slate-900 dark:border-slate-700">
-
+  <div
+    className="bg-white rounded-2xl border-2 border-slate-200 shadow-lg w-full max-w-lg dark:bg-slate-900 dark:border-slate-700"
+  >
     {/* Header */}
-    <div className="flex items-center justify-between px-6 py-4 border-b-2 border-slate-100 dark:border-slate-700">
+    <div
+      className="flex items-center justify-between px-6 py-4 border-b-2 border-slate-100 dark:border-slate-700"
+    >
       <h3 className="text-lg font-bold">Título</h3>
-      <Button size="icon"><X /></Button>
+      <button size="icon"><X /></button>
     </div>
 
     {/* Body */}
-    <div className="px-6 py-4">
-      {conteúdo}
-    </div>
+    <div className="px-6 py-4">{conteúdo}</div>
 
     {/* Footer */}
-    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t-2 border-slate-100 dark:border-slate-700">
-      <Button variant="outline">Cancelar</Button>
-      <Button className="bg-[{cor}-400] hover:bg-[{cor}-500] text-[#1F2937]">Salvar</Button>
+    <div
+      className="flex items-center justify-end gap-3 px-6 py-4 border-t-2 border-slate-100 dark:border-slate-700"
+    >
+      <button variant="outline">Cancelar</button>
+      <button className="bg-[{cor}-400] hover:bg-[{cor}-500] text-[#1F2937]">Salvar</button>
     </div>
   </div>
 </div>
@@ -439,8 +456,8 @@ Antes de entregar qualquer componente, certifique-se de validar todos os pontos 
 - [ ] **Definição da Cor Principal:** Perguntou ao utilizador qual é a cor principal?
 - [ ] **Mapeamento de Cores:** Todas as referências à cor principal usam o mapeamento correto.
 - [ ] **Contraste da Cor Principal (Texto Branco vs. Preto):** Os botões e elementos da cor principal têm a cor do texto definida com base na luminosidade do fundo:
-  * **Texto Branco (`text-white`):** Se a cor principal for escura ou saturada (ex: Azul Marinho, Vermelho, Roxo, Verde Escuro, Preto).
-  * **Texto Escuro/Preto (`text-[#1F2937]`):** Se a cor principal for clara ou pastel (ex: Amarelo, Verde Limão, Azul Bebê, Rosa Claro, Branco).
+  - **Texto Branco (`text-white`):** Se a cor principal for escura ou saturada (ex: Azul Marinho, Vermelho, Roxo, Verde Escuro, Preto).
+  - **Texto Escuro/Preto (`text-[#1F2937]`):** Se a cor principal for clara ou pastel (ex: Amarelo, Verde Limão, Azul Bebê, Rosa Claro, Branco).
 - [ ] **Bordas:** As bordas são sempre `border-2` (nunca `border`).
 - [ ] **Bordas em Dark Mode:** O modo escuro usa obrigatoriamente `dark:border-slate-700` (nunca `dark:border-slate-800`).
 - [ ] **Separadores:** Os divisores e separadores usam `border-b-2` ou `border-t-2`.
@@ -453,7 +470,7 @@ Antes de entregar qualquer componente, certifique-se de validar todos os pontos 
 
 ### Guia de Aplicação de Contraste
 
-| Tipo de Cor de Fundo | Exemplos Visuais | Classe do Texto (Tailwind) |
-| :--- | :--- | :--- |
-| **Escura / Intensa** | Preto, Azul Marinho, Vermelho Vivo, Roxo | `text-white` |
-| **Clara / Pastel** | Amarelo, Verde Menta, Azul Bebê, Branco | `text-[#1F2937]` |
+| Tipo de Cor de Fundo | Exemplos Visuais                         | Classe do Texto (Tailwind) |
+| :------------------- | :--------------------------------------- | :------------------------- |
+| **Escura / Intensa** | Preto, Azul Marinho, Vermelho Vivo, Roxo | `text-white`               |
+| **Clara / Pastel**   | Amarelo, Verde Menta, Azul Bebê, Branco  | `text-[#1F2937]`           |

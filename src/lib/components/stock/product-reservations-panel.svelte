@@ -1,20 +1,24 @@
-<script>
-  import { X, Info, ChevronLeft, Trash2, FileText, RotateCcw } from "@/lib/utils/icon-map";
-  import { getReservations, deleteReservation, restoreReservation, resetReservation } from "@/lib/utils/stock-api";
+<script lang="ts">
+  import { X, Info, Trash2, FileText, RotateCcw } from "lucide-svelte";
+  import {
+    getReservations,
+    deleteReservation,
+    restoreReservation,
+    resetReservation,
+  } from "$lib/utils/stock-api";
   import { toast } from "svelte-sonner";
-  import { createAsyncStore } from "@/lib/state/async-store.svelte";
-  import Button from "@/lib/components/ui/button.svelte";
-  import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
+  import { createAsyncStore } from "$lib/state/async-store.svelte";
+  import Button from "$lib/components/ui/button.svelte";
+  import ConfirmDeleteModal from "$lib/components/ui/confirm-delete-modal.svelte";
 
   let {
     product,
     onClose = () => {},
-    onAddReservation = () => {},
     onProductChange = () => {},
-  } = $props();
+  }: { product: any; onClose?: () => void; onProductChange?: () => void } = $props();
 
   const reservationsStore = createAsyncStore(() => getReservations({ productId: product.id }));
-  let deletingReservation = $state(null);
+  let deletingReservation = $state<any>(null);
 
   function formatDate(dateStr) {
     if (!dateStr) return "—";
@@ -66,7 +70,7 @@
       toast.success("Reserva apagada com sucesso!");
       reservationsStore.refetch();
       onProductChange();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast.error("Erro ao apagar reserva.");
     }
@@ -75,12 +79,13 @@
 
 <div class="flex h-full w-full flex-col bg-white dark:bg-slate-900 animate-in fade-in duration-200">
   <!-- Header -->
-  <div class="flex items-start justify-between p-5 pb-3">
+  <div class="flex items-start justify-between p-4 sm:p-5 pb-3">
     <div class="flex flex-col">
       <span class="text-[10px] font-bold text-[#8C9BAE] uppercase tracking-widest mb-0.5">
-        PRODUTO • {product.ref} {product.name}
+        PRODUTO • {product.ref}
+        {product.name}
       </span>
-      <h2 class="text-xl font-extrabold text-slate-850 dark:text-slate-100 leading-tight">
+      <h2 class="text-xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
         Reservas do Produto
       </h2>
     </div>
@@ -90,11 +95,15 @@
   </div>
 
   <!-- Content -->
-  <div class="flex-1 overflow-y-auto px-5 pb-24 flex flex-col gap-4">
+  <div class="flex-1 overflow-y-auto px-4 sm:px-5 pb-28 flex flex-col gap-4">
     <!-- Table Container -->
-    <div class="w-full rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950 overflow-hidden flex flex-col min-h-[200px]">
+    <div
+      class="w-full rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950 overflow-hidden flex flex-col min-h-[200px]"
+    >
       <!-- Table Header -->
-      <div class="grid grid-cols-[1fr_1fr_auto_auto] sm:grid-cols-[1fr_1fr_auto_auto_auto] bg-[#F8FAFC] px-4 py-2.5 text-[10px] font-bold text-slate-500 tracking-wider dark:bg-slate-900/50 gap-x-2">
+      <div
+        class="grid grid-cols-[1fr_1fr_auto_auto] sm:grid-cols-[1fr_1fr_auto_auto_auto] bg-[#F8FAFC] px-4 py-2.5 text-[10px] font-bold text-slate-500 tracking-wider dark:bg-slate-900/50 gap-x-2"
+      >
         <span class="text-left">COMERCIAL</span>
         <span class="text-center">VARIANTE</span>
         <span class="text-center w-12">QTD</span>
@@ -105,7 +114,9 @@
       <!-- Table Body -->
       <div class="flex-1 flex flex-col">
         {#if reservationsStore.isLoading}
-          <div class="flex-1 flex items-center justify-center py-12 text-xs text-slate-500 font-semibold">
+          <div
+            class="flex-1 flex items-center justify-center py-12 text-xs text-slate-500 font-semibold"
+          >
             A carregar reservas...
           </div>
         {:else if !reservationsStore.data || reservationsStore.data.length === 0}
@@ -119,10 +130,12 @@
             </p>
           </div>
         {:else}
-          <div class="flex flex-col max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+          <div
+            class="flex flex-col max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60"
+          >
             {#each reservationsStore.data as r (r.id)}
               <div
-                class="grid grid-cols-[1fr_1fr_auto_auto] sm:grid-cols-[1fr_1fr_auto_auto_auto] px-4 py-3 items-center text-slate-750 dark:text-slate-350 hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors gap-x-2"
+                class="grid grid-cols-[1fr_1fr_auto_auto] sm:grid-cols-[1fr_1fr_auto_auto_auto] px-4 py-3 items-center text-slate-700 dark:text-slate-300 hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors gap-x-2"
               >
                 <span class="text-sm font-semibold truncate pr-2" title={r.user?.name || ""}>
                   {r.user?.name || ""}
@@ -135,20 +148,39 @@
                 </span>
                 <div class="text-right flex justify-end gap-1 w-12">
                   {#if r.status === 1}
-                    <Button variant="ghost" size="icon" onclick={() => handleReset(r.id)} class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Reverter para pendente">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onclick={() => handleReset(r.id)}
+                      class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      title="Reverter para pendente"
+                    >
                       <RotateCcw class="size-4" />
                     </Button>
                   {:else if r.status === 2}
-                    <Button variant="ghost" size="icon" onclick={() => handleRestore(r.id)} class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Restaurar reserva">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onclick={() => handleRestore(r.id)}
+                      class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      title="Restaurar reserva"
+                    >
                       <RotateCcw class="size-4" />
                     </Button>
                   {:else}
-                    <Button variant="ghost" size="icon" onclick={() => handleDelete(r.id)} class="text-red-500 hover:text-red-700 hover:bg-red-50/50 dark:hover:bg-red-950/20 size-8">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onclick={() => handleDelete(r.id)}
+                      class="text-red-500 hover:text-red-700 hover:bg-red-50/50 dark:hover:bg-red-950/20 size-8"
+                    >
                       <Trash2 class="size-4" />
                     </Button>
                   {/if}
                 </div>
-                <span class="hidden sm:inline text-center text-xs text-slate-455 dark:text-slate-500 w-16">
+                <span
+                  class="hidden sm:inline text-center text-xs text-slate-400 dark:text-slate-500 w-16"
+                >
                   {formatDate(r.createdAt)}
                 </span>
               </div>
@@ -159,30 +191,21 @@
     </div>
 
     <!-- Note -->
-    <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-500/95 dark:text-slate-500">
-      <Info class="size-4 shrink-0 text-slate-450/80 dark:text-slate-650" />
+    <div
+      class="flex items-center gap-1.5 text-xs font-semibold text-slate-500/95 dark:text-slate-500"
+    >
+      <Info class="size-4 shrink-0 text-slate-500 dark:text-slate-400" />
       <span>As reservas são válidas por 8 dias úteis.</span>
     </div>
   </div>
 
   <ConfirmDeleteModal
     open={deletingReservation !== null}
-    onClose={() => deletingReservation = null}
+    onClose={() => (deletingReservation = null)}
     onConfirm={handleDeleteConfirm}
     title="Eliminar Reserva"
-    itemName={deletingReservation ? `${deletingReservation.quantity}x ${deletingReservation.name}` : ""}
+    itemName={deletingReservation
+      ? `${deletingReservation.quantity}x ${deletingReservation.name}`
+      : ""}
   />
-
-  <!-- Footer Buttons -->
-  <div class="absolute bottom-0 left-0 right-0 border-t-2 border-slate-200 bg-slate-50 px-6 py-3 flex items-center gap-3 dark:border-slate-700 dark:bg-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-300">
-    <Button variant="outline" onclick={onClose} class="h-11 px-5">
-      <ChevronLeft class="size-4" />
-      <span>Voltar</span>
-    </Button>
-
-    <Button variant="default" onclick={onAddReservation} class="flex-1 h-11 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] font-semibold active:scale-95">
-      <span class="text-base">+</span>
-      <span>Adicionar Reserva</span>
-    </Button>
-  </div>
 </div>

@@ -1,51 +1,43 @@
 <script lang="ts">
-    import { getAuthToken } from "@/lib/state/auth-store";
+  import { apiClient } from "$lib/utils/api-client";
 
-    const API_URL = import.meta.env.VITE_API_URL;
+  type Props = {
+    path?: string;
+    width?: number;
+    alt?: string;
+    class?: string;
+  };
 
-    let { path = "", width, alt = "", class: className = "" } = $props();
+  let { path = "", width, alt = "", class: className = "" }: Props = $props();
 
-    let blobUrl = $state<string | null>(null);
+  let blobUrl = $state<string | null>(null);
 
-    $effect(() => {
-        blobUrl = null;
-        if (!path) return;
+  $effect(() => {
+    blobUrl = null;
+    if (!path) return;
 
-        const token = getAuthToken();
-        let url = path;
-        if (!url.startsWith("http")) url = `${API_URL}${url}`;
-        if (width) url = `${url}?w=${width}`;
-        let cancelled = false;
-        let localUrl: string | null = null;
+    const url = width && !path.includes("?w=") ? `${path}?w=${width}` : path;
+    let cancelled = false;
+    let localUrl: string | null = null;
 
-        fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-            .then((res) => {
-                if (!res.ok) throw new Error();
-                return res.blob();
-            })
-            .then((blob) => {
-                if (!cancelled) {
-                    localUrl = URL.createObjectURL(blob);
-                    blobUrl = localUrl;
-                }
-            })
-            .catch(() => {});
+    apiClient
+      .get<Blob>(url, { responseType: "blob" })
+      .then((res) => {
+        if (cancelled) return;
+        localUrl = URL.createObjectURL(res.data);
+        blobUrl = localUrl;
+      })
+      .catch(() => {});
 
-        return () => {
-            cancelled = true;
-            if (localUrl) URL.revokeObjectURL(localUrl);
-        };
-    });
+    return () => {
+      cancelled = true;
+      if (localUrl) URL.revokeObjectURL(localUrl);
+    };
+  });
 </script>
 
 {#if blobUrl}
-    <img
-        src={blobUrl}
-        {alt}
-        class={className}
-        loading="lazy"
-        decoding="async"
-    />
+  <img src={blobUrl} {alt} class={className} loading="lazy" decoding="async" />
 {:else if path}
-    <div class={className}></div>
+  <div class={className}></div>
 {/if}

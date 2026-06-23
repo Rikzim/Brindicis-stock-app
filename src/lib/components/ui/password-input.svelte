@@ -1,13 +1,9 @@
-<script>
-  import { Eye, EyeOff } from "@/lib/utils/icon-map";
-  import { cn } from "@/lib/utils";
-  import Input from "@/lib/components/ui/input.svelte";
+<script lang="ts">
+  import { Eye, EyeOff } from "lucide-svelte";
+  import { cn } from "$lib/utils";
+  import Input from "$lib/components/ui/input.svelte";
 
-  let {
-    class: className = "",
-    value = $bindable(""),
-    ...restProps
-  } = $props();
+  let { class: className = "", value = $bindable(""), ...restProps } = $props();
 
   let showPassword = $state(false);
 </script>
@@ -21,7 +17,7 @@
   />
   <button
     type="button"
-    onclick={() => showPassword = !showPassword}
+    onclick={() => (showPassword = !showPassword)}
     class="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus-visible:ring-[3px]"
     aria-label={showPassword ? "Hide password" : "Show password"}
   >

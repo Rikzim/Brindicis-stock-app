@@ -1,7 +1,7 @@
-<script>
-  import { cn } from "@/lib/utils";
-  import { Package } from "@/lib/utils/icon-map";
-  import AuthedImage from "@/lib/components/ui/authed-image.svelte";
+<script lang="ts">
+  import { cn } from "$lib/utils";
+  import { Package } from "lucide-svelte";
+  import AuthedImage from "$lib/components/ui/authed-image.svelte";
 
   let {
     name = "",
@@ -11,9 +11,15 @@
     image = undefined,
     isSelected = false,
     onClick = () => {},
+  }: {
+    name?: string;
+    reference?: string;
+    quantity?: number;
+    colors?: string;
+    image?: string;
+    isSelected?: boolean;
+    onClick?: () => void;
   } = $props();
-
-
 </script>
 
 <button
@@ -26,10 +32,17 @@
       : "border-slate-200 hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:hover:border-slate-600"
   )}
 >
-    <div class="relative w-[90px] shrink-0 bg-slate-50 border-r border-slate-200 text-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-500 overflow-hidden">
-    <div class="aspect-square">
+  <div
+    class="relative w-[80px] sm:w-[90px] shrink-0 bg-slate-50 border-r border-slate-200 text-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-500 overflow-hidden"
+  >
+    <div class="relative w-full" style="aspect-ratio: 1/1">
       {#if image}
-        <AuthedImage path={image} width={200} alt={name} class="absolute inset-0 size-full object-contain" />
+        <AuthedImage
+          path={image}
+          width={200}
+          alt={name}
+          class="absolute inset-0 size-full object-contain"
+        />
       {:else}
         <div class="absolute inset-0 flex items-center justify-center">
           <Package class="size-8" />
@@ -37,7 +50,9 @@
       {/if}
     </div>
   </div>
-  <div class="flex-1 flex flex-col justify-center gap-0.5 px-4 py-3 bg-white dark:bg-slate-800">
+  <div
+    class="flex-1 flex flex-col justify-center gap-0.5 px-3 sm:px-4 py-3 bg-white dark:bg-slate-800 min-w-0"
+  >
     <p class="truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">{reference}</p>
     <p class="truncate text-sm">
       <span class="text-slate-500 font-semibold dark:text-slate-400">Qtd: </span>

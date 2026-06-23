@@ -9,4 +9,3 @@ services:
       - ./index.html:/app/index.html
       - ./vite.config.ts:/app/vite.config.ts
       - ./.env:/app/.env
-

@@ -1,12 +1,7 @@
-<script>
-  import { cn } from "@/lib/utils";
+<script lang="ts">
+  import { cn } from "$lib/utils";
 
-  let {
-    class: className = "",
-    for: htmlFor = undefined,
-    children,
-    ...restProps
-  } = $props();
+  let { class: className = "", for: htmlFor = undefined, children, ...restProps } = $props();
 </script>
 
 <label

@@ -22,13 +22,23 @@ export function createAsyncStore<T>(fetcher: () => Promise<T>) {
         if (!cancelled) isLoading = false;
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   });
 
   return {
-    get data() { return data; },
-    get isLoading() { return isLoading; },
-    get error() { return error; },
-    refetch() { fetchCount++; },
+    get data() {
+      return data;
+    },
+    get isLoading() {
+      return isLoading;
+    },
+    get error() {
+      return error;
+    },
+    refetch() {
+      fetchCount++;
+    },
   };
 }

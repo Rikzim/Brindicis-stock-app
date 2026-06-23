@@ -104,6 +104,36 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+  html,
+  body {
+    @apply h-full;
+  }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-width: 1024px) {
+  .landscape-lock {
+    display: flex !important;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .min-h-touch {
+    min-height: 44px;
+  }
+  .min-w-touch {
+    min-width: 44px;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
   }
 }
