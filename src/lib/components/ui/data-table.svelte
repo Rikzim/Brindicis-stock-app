@@ -14,20 +14,26 @@
     showPagination = true,
     pageSizeOptions = [25, 50, 100, 250],
     cell = undefined,
+    totalRows,
+    page = $bindable(1),
+    size = $bindable(pageSize),
+    onPageChange,
   } = $props();
 
-  let page = $state(1);
-  let size = $state(25);
+  let totalPages = $derived(Math.max(1, Math.ceil(totalRows / size)));
+  let safePage = $derived(Math.max(1, Math.min(page, totalPages)));
+  let showBar = $derived(showPagination && totalRows > 0);
 
-  $effect(() => {
-    size = pageSize;
-  });
+  function goToPage(newPage) {
+    page = newPage;
+    onPageChange?.(page, size);
+  }
 
-  let totalPages = $derived(Math.max(1, Math.ceil(data.length / size)));
-  let safePage = $derived(Math.min(page, totalPages));
-  let start = $derived((safePage - 1) * size);
-  let pageData = $derived(data.slice(start, start + size));
-  let showBar = $derived(showPagination && !isLoading && data.length > 0);
+  function changeSize(newSize) {
+    size = newSize;
+    page = 1;
+    onPageChange?.(page, size);
+  }
 </script>
 
 <div class="bg-white rounded-2xl border border-slate-200/60 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-800/80 overflow-hidden flex flex-col flex-1 min-h-0">
@@ -59,7 +65,7 @@
             </td>
           </tr>
         {:else}
-          {#each pageData as row, i (rowKey(row))}
+          {#each data as row, i (rowKey(row))}
             <tr
               class="border-b border-slate-100 last:border-0 transition-colors dark:border-slate-800/60 {onRowClick ? 'cursor-pointer' : ''} hover:bg-slate-50/30 dark:hover:bg-slate-800/10 {i % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/20 dark:bg-slate-800/5'}"
               onclick={() => onRowClick?.(row)}
@@ -84,33 +90,33 @@
     <div class="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800/60 bg-white dark:bg-slate-900 shrink-0">
       <div class="flex items-center gap-2">
         <select
-          bind:value={size}
-          onchange={() => { page = 1; }}
+          value={size}
+          onchange={(e) => changeSize(Number(e.target.value))}
           class="h-7 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
         >
           {#each pageSizeOptions as opt}
             <option value={opt}>{opt}</option>
           {/each}
         </select>
-        <span class="text-xs text-slate-400 dark:text-slate-500">linhas por página · {data.length} registos</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">linhas por página · {totalRows} registos</span>
       </div>
       <div class="flex items-center gap-1.5">
         <span class="text-xs text-slate-500 dark:text-slate-400 mr-2">
           Página {safePage} de {totalPages}
         </span>
-        <Button variant="outline" size="icon" disabled={safePage <= 1} onclick={() => page = 1} class="size-7">
+        <Button variant="outline" size="icon" disabled={safePage <= 1} onclick={() => goToPage(1)} class="size-7">
           <ChevronsLeft class="size-3.5" />
         </Button>
-        <Button variant="outline" size="icon" disabled={safePage <= 1} onclick={() => page = Math.max(1, page - 1)} class="size-7">
+        <Button variant="outline" size="icon" disabled={safePage <= 1} onclick={() => goToPage(Math.max(1, page - 1))} class="size-7">
           <ChevronLeft class="size-3.5" />
         </Button>
         <Button variant="outline" size="icon" class="size-7 bg-amber-400 text-[#1F2937] hover:bg-amber-500 border-none cursor-default text-xs font-bold">
           {safePage}
         </Button>
-        <Button variant="outline" size="icon" disabled={safePage >= totalPages} onclick={() => page = Math.min(totalPages, page + 1)} class="size-7">
+        <Button variant="outline" size="icon" disabled={safePage >= totalPages} onclick={() => goToPage(Math.min(totalPages, page + 1))} class="size-7">
           <ChevronRight class="size-3.5" />
         </Button>
-        <Button variant="outline" size="icon" disabled={safePage >= totalPages} onclick={() => page = totalPages} class="size-7">
+        <Button variant="outline" size="icon" disabled={safePage >= totalPages} onclick={() => goToPage(totalPages)} class="size-7">
           <ChevronsRight class="size-3.5" />
         </Button>
       </div>

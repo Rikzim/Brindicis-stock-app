@@ -23,19 +23,19 @@
 
 <nav class="relative flex h-16 items-stretch bg-white rounded-2xl border-2 border-slate-200 transition-colors duration-250 dark:bg-slate-900 dark:border-slate-700">
   <!-- Logo Section -->
-  <div class="flex items-center gap-2.5 pl-5 pr-6 shrink-0">
+  <div class="flex items-center gap-2.5 pl-4 pr-3 sm:pl-5 sm:pr-6 shrink-0">
     <button type="button" onclick={() => window.location.reload()} class="flex items-center gap-2.5 cursor-pointer">
       <div class="flex size-8 items-center justify-center bg-[#FBBF24] rounded-lg shrink-0">
         <Logo class="h-5 w-auto" fill="#1F2937" />
       </div>
-      <span class="text-base font-semibold tracking-tight text-slate-800 dark:text-slate-100">
+      <span class="hidden sm:inline text-base font-semibold tracking-tight text-slate-800 dark:text-slate-100">
         Brindicis <span class="text-amber-500 dark:text-amber-400">Stock</span>
       </span>
     </button>
   </div>
 
   <!-- Search Section -->
-  <div class="relative flex flex-1 items-center px-6">
+  <div class="relative flex flex-1 items-center px-3 sm:px-6">
     <div class="relative w-full">
       <Search class="text-slate-400 absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
       <Input
@@ -45,7 +45,7 @@
       />
       <Badge
         variant="outline"
-        class="text-slate-400 border-slate-200/60 bg-white absolute top-1/2 right-2.5 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-normal shadow-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400"
+        class="hidden sm:inline-flex text-slate-400 border-slate-200/60 bg-white absolute top-1/2 right-2.5 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-normal shadow-none dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400"
       >
         <span class="text-xs mr-0.5">⌘</span>K
       </Badge>

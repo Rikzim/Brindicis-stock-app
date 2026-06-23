@@ -1,5 +1,5 @@
 <script>
-  import { getProducts } from "@/lib/utils/stock-api";
+  import { getProducts, getSuppliersPaginated } from "@/lib/utils/stock-api";
   import { Plus } from "lucide-svelte";
   import { toast } from "svelte-sonner";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
@@ -15,31 +15,49 @@
   import AdminModal from "@/lib/components/ui/admin-modal.svelte";
   import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
   import DetailGrid from "@/lib/components/ui/detail-grid.svelte";
+  import { getNumberParam, writeSearchParams } from "@/lib/utils/url-sync.svelte";
 
   let { searchQuery = "" } = $props();
 
   const productsStore = createAsyncStore(getProducts);
 
-  let supplierList = $state([
-    { id: 1, name: "DELTAPLUS", status: "Ativo" },
-    { id: 2, name: "COUTALE", status: "Ativo" },
-    { id: 3, name: "SOLS", status: "Ativo" },
-    { id: 4, name: "ORIENTE", status: "Ativo" },
-  ]);
-
   let crud = createCrudModal();
   let formName = $state("");
   let formStatus = $state("Ativo");
-  let initialized = $state(false);
+
+  let serverSuppliers = $state([]);
+  let serverTotal = $state(0);
+  let serverPage = $state(getNumberParam("page", 1));
+  let serverSize = $state(getNumberParam("size", 25));
+  let serverLoading = $state(false);
+
+  async function doFetch(page, size) {
+    serverLoading = true;
+    try {
+      const result = await getSuppliersPaginated(page, size);
+      serverSuppliers = result.suppliers.map((name) => ({ name, status: "Ativo" }));
+      serverTotal = result.total;
+      serverPage = page;
+    } catch {
+      serverSuppliers = [];
+      serverTotal = 0;
+    } finally {
+      serverLoading = false;
+    }
+  }
+
+  $effect(() => { doFetch(1, serverSize); });
 
   $effect(() => {
-    if (!initialized && productsStore.data && productsStore.data.length > 0) {
-      initialized = true;
-      const list = new Set(["DELTAPLUS", "COUTALE", "SOLS", "ORIENTE"]);
-      productsStore.data.forEach((p) => { if (p.type) list.add(p.type.toUpperCase()); });
-      supplierList = Array.from(list).map((name, index) => ({ id: index + 1, name, status: "Ativo" }));
-    }
+    writeSearchParams({
+      page: serverPage > 1 ? serverPage : undefined,
+      size: serverSize !== 25 ? serverSize : undefined,
+    });
   });
+
+  function handlePageChange(page, size) {
+    doFetch(page, size);
+  }
 
   function handleOpenAdd() { formName = ""; formStatus = "Ativo"; crud.openAdd(); }
   function handleOpenEdit(sup) { formName = sup.name; formStatus = sup.status; crud.openEdit(sup); }
@@ -47,12 +65,13 @@
   function handleSave(e) {
     e.preventDefault();
     if (!formName.trim()) { toast.error("O nome do fornecedor é obrigatório."); return; }
-    const updated = { id: Date.now(), name: formName.trim().toUpperCase(), status: formStatus };
+    const name = formName.trim().toUpperCase();
     if (crud.isAdd) {
-      supplierList = [updated, ...supplierList];
+      serverSuppliers = [{ name, status: formStatus }, ...serverSuppliers];
+      serverTotal = serverTotal + 1;
       toast.success("Fornecedor adicionado com sucesso.");
     } else if (crud.selected) {
-      supplierList = supplierList.map((s) => s.id === crud.selected.id ? { ...s, name: formName.trim().toUpperCase(), status: formStatus } : s);
+      serverSuppliers = serverSuppliers.map((s) => s.name === crud.selected.name ? { ...s, name, status: formStatus } : s);
       toast.success("Fornecedor atualizado com sucesso.");
     }
     crud.close();
@@ -60,18 +79,14 @@
 
   function handleDelete() {
     if (!crud.selected) return;
-    supplierList = supplierList.filter((s) => s.id !== crud.selected.id);
-    toast.success("Fornecedor removido com sucesso."); crud.close();
+    serverSuppliers = serverSuppliers.filter((s) => s.name !== crud.selected.name);
+    serverTotal = Math.max(0, serverTotal - 1);
+    toast.success("Fornecedor removido com sucesso.");
+    crud.close();
   }
 
   let selectedProducts = $derived(
     crud.selected ? (productsStore.data || []).filter((p) => p.type?.toUpperCase() === crud.selected.name.toUpperCase()) : []
-  );
-
-  let filteredSuppliers = $derived(
-    searchQuery
-      ? supplierList.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      : supplierList
   );
 
   const columns = [
@@ -89,8 +104,10 @@
     </Button>
   </PageCard>
 
-  <DataTable columns={columns} data={filteredSuppliers} isLoading={productsStore.isLoading && supplierList.length === 0}
-    loadingMessage="A carregar fornecedores..." emptyMessage="Sem fornecedores disponíveis." rowKey={(r) => r.id}>
+  <DataTable columns={columns} data={serverSuppliers} isLoading={serverLoading}
+    loadingMessage="A carregar fornecedores..." emptyMessage="Sem fornecedores disponíveis." rowKey={(r) => r.name}
+    totalRows={serverTotal} bind:page={serverPage} bind:size={serverSize} pageSizeOptions={[10, 25, 50]}
+    onPageChange={handlePageChange}>
     {#snippet cell(row, col)}
       {#if col.key === "status"}
         <StatusBadge status={row.status} />

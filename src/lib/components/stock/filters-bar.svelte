@@ -41,7 +41,7 @@
 
 <div class="bg-slate-50 border-b-2 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 animate-in fade-in slide-in-from-top-1 duration-300">
   <div class="px-6 py-4">
-    <div class="grid grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="flex flex-col">
         <span class="text-xs font-bold text-slate-600 mb-1.5 dark:text-slate-300">
           Família

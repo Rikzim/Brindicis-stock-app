@@ -23,10 +23,8 @@
     if ($authStore.accessToken && !$authStore.user) {
       getMe()
         .then((user) => authStore.setUser(user))
-        .catch((err) => {
-          if (axios.isAxiosError(err) && err.response?.status === 401) {
-            authStore.reset();
-          }
+        .catch(() => {
+          authStore.reset();
         });
     }
   });

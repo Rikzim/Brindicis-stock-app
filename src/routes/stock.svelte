@@ -4,73 +4,105 @@
   import ProductGrid from "@/lib/components/stock/product-grid.svelte";
   import ProductDetailPanel from "@/lib/components/stock/product-detail-panel.svelte";
   import { settingsStore } from "@/lib/state/settings-store";
-  import { getProducts, getFamilies } from "@/lib/utils/stock-api";
+  import { getProductsPaginated, getProductsFilters, getFamilies, getProductById } from "@/lib/utils/stock-api";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
+  import { getStringParam, getNumberParam, writeSearchParams } from "@/lib/utils/url-sync.svelte";
 
   let panelPosition = $derived($settingsStore.panelPosition);
   let selectedProductId = $state(null);
-  let searchQuery = $state("");
+  let cachedProduct = $state(null);
+
+  let page = $state(getNumberParam("page", 1));
+  let size = $state(getNumberParam("size", 32));
+  let searchQuery = $state(getStringParam("search", ""));
   let filters = $state({
-    familia: "Todas",
-    disponibilidade: "Todas",
-    cor: "Todas",
-    tamanho: "Todas",
+    familia: getStringParam("familia", "Todas"),
+    disponibilidade: getStringParam("disponibilidade", "Todas"),
+    cor: getStringParam("cor", "Todas"),
+    tamanho: getStringParam("tamanho", "Todas"),
   });
 
-  const productsStore = createAsyncStore(getProducts);
   const familiesStore = createAsyncStore(getFamilies);
+  const productsFiltersStore = createAsyncStore(getProductsFilters);
+
+  let serverProducts = $state([]);
+  let serverTotal = $state(0);
+  let serverLoading = $state(false);
+
+  function buildQueryParams(p, s) {
+    return {
+      page: p,
+      limit: s,
+      search: searchQuery || undefined,
+      familia: filters.familia !== "Todas" ? filters.familia : undefined,
+      disponibilidade: filters.disponibilidade !== "Todas" ? filters.disponibilidade : undefined,
+      cor: filters.cor !== "Todas" ? filters.cor : undefined,
+      tamanho: filters.tamanho !== "Todas" ? filters.tamanho : undefined,
+    };
+  }
+
+  async function doFetch(p, s) {
+    serverLoading = true;
+    try {
+      const result = await getProductsPaginated(buildQueryParams(p, s));
+      serverProducts = result.products;
+      serverTotal = result.total;
+      page = p;
+    } catch {
+      serverProducts = [];
+      serverTotal = 0;
+    } finally {
+      serverLoading = false;
+    }
+  }
+
+  $effect(() => {
+    searchQuery;
+    JSON.stringify(filters);
+    doFetch(1, size);
+  });
+
+  $effect(() => {
+    writeSearchParams({
+      page: page > 1 ? page : undefined,
+      size: size !== 32 ? size : undefined,
+      search: searchQuery || undefined,
+      familia: filters.familia !== "Todas" ? filters.familia : undefined,
+      disponibilidade: filters.disponibilidade !== "Todas" ? filters.disponibilidade : undefined,
+      cor: filters.cor !== "Todas" ? filters.cor : undefined,
+      tamanho: filters.tamanho !== "Todas" ? filters.tamanho : undefined,
+    });
+  });
+
+  $effect(() => {
+    const id = selectedProductId;
+    if (id == null) return;
+    const fresh = serverProducts.find((p) => p.id === id);
+    if (fresh) cachedProduct = fresh;
+  });
 
   let selectedProduct = $derived(
-    (productsStore.data || []).find((p) => p.id === selectedProductId) ?? null
+    selectedProductId != null && cachedProduct?.id === selectedProductId
+      ? cachedProduct
+      : null
   );
 
-  let filteredProducts = $derived.by(() => {
-    let result = productsStore.data || [];
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.ref.toLowerCase().includes(q) ||
-          p.name.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q)
-      );
+  async function refreshSelectedProduct() {
+    if (selectedProductId == null) return;
+    try {
+      cachedProduct = await getProductById(selectedProductId);
+    } catch {
+      // ignore
     }
+    doFetch(page, size);
+  }
 
-    if (filters.familia && filters.familia !== "Todas") {
-      result = result.filter((p) => p.family?.name === filters.familia);
-    }
-
-    if (filters.cor && filters.cor !== "Todas") {
-      result = result.filter((p) => p.colors?.some((c) => c.name === filters.cor));
-    }
-
-    if (filters.tamanho && filters.tamanho !== "Todas") {
-      result = result.filter((p) => p.sizes?.some((s) => s.size === filters.tamanho));
-    }
-
-    if (filters.disponibilidade && filters.disponibilidade !== "Todas") {
-      if (filters.disponibilidade === "Com Stock") {
-        result = result.filter((p) => p.quantity > 0);
-      } else if (filters.disponibilidade === "Esgotado") {
-        result = result.filter((p) => p.quantity === 0);
-      }
-    }
-
-    return result;
-  });
-
-  let availableColors = $derived.by(() => {
-    const set = new Set();
-    (productsStore.data || []).forEach((p) => p.colors?.forEach((c) => set.add(c.name)));
-    return Array.from(set);
-  });
-
-  let availableSizes = $derived.by(() => {
-    const set = new Set();
-    (productsStore.data || []).forEach((p) => p.sizes?.forEach((s) => set.add(s.size)));
-    return Array.from(set);
-  });
+  let availableColors = $derived(
+    (productsFiltersStore.data?.colors || []).map((c) => (typeof c === "string" ? c : c.name))
+  );
+  let availableSizes = $derived(
+    (productsFiltersStore.data?.sizes || []).map((s) => (typeof s === "string" ? s : s.size))
+  );
 </script>
 
 <div class="flex h-screen flex-col bg-[#F3F4F6] p-2 gap-2 transition-colors duration-250 dark:bg-slate-950">
@@ -79,7 +111,8 @@
     {#if panelPosition === "left" && selectedProduct}
       <ProductDetailPanel
         product={selectedProduct}
-        onClose={() => selectedProductId = null}
+        onClose={() => { selectedProductId = null; cachedProduct = null; }}
+        onProductChange={refreshSelectedProduct}
       />
     {/if}
 
@@ -91,16 +124,21 @@
         bind:filters
       />
       <ProductGrid
-        products={filteredProducts}
-        isLoading={productsStore.isLoading}
+        products={serverProducts}
+        totalRows={serverTotal}
+        isLoading={serverLoading}
+        bind:page
+        bind:size
         bind:selectedId={selectedProductId}
+        onPageChange={doFetch}
       />
     </div>
 
     {#if panelPosition === "right" && selectedProduct}
       <ProductDetailPanel
         product={selectedProduct}
-        onClose={() => selectedProductId = null}
+        onClose={() => { selectedProductId = null; cachedProduct = null; }}
+        onProductChange={refreshSelectedProduct}
       />
     {/if}
   </div>

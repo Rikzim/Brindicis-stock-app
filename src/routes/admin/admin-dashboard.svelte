@@ -1,39 +1,101 @@
 <script>
   import { navigateTo } from "@/lib/utils/navigate";
-  import { getProducts, getReservations } from "@/lib/utils/stock-api";
-  import { Archive, Package } from "lucide-svelte";
+  import { getProducts, getReservationsPaginated, approveReservation, rejectReservation, restoreReservation, resetReservation } from "@/lib/utils/stock-api";
+  import { Archive, Package, Check, X, RotateCcw } from "lucide-svelte";
   import AuthedImage from "@/lib/components/ui/authed-image.svelte";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
+  import { toast } from "svelte-sonner";
   import PageCard from "@/lib/components/ui/page-card.svelte";
   import DataTable from "@/lib/components/ui/data-table.svelte";
+  import StatusBadge from "@/lib/components/ui/status-badge.svelte";
+  import Button from "@/lib/components/ui/button.svelte";
 
   let { searchQuery = "" } = $props();
 
   const productsStore = createAsyncStore(getProducts);
-  const reservationsStore = createAsyncStore(() => getReservations());
 
-  let filteredReservations = $derived.by(() => {
-    const all = reservationsStore.data || [];
-    if (!searchQuery) return all.slice(0, 5);
-    const q = searchQuery.toLowerCase();
-    return all.filter((r) =>
-      (r.ref || r.product?.ref || "").toLowerCase().includes(q) ||
-      (r.name || "").toLowerCase().includes(q)
-    ).slice(0, 5);
+  let displayStock = $derived(productsStore.isLoading ? "..." : (productsStore.data?.reduce((sum, p) => sum + (p.quantity - p.reserved), 0) || 98617));
+  let displayReserved = $derived(productsStore.isLoading ? "..." : (productsStore.data?.reduce((sum, p) => sum + p.reserved, 0) || 0));
+
+  let serverReservations = $state([]);
+  let serverTotal = $state(0);
+  let serverPage = $state(1);
+  let serverSize = $state(5);
+  let serverLoading = $state(false);
+
+  async function doFetch(page, size) {
+    serverLoading = true;
+    try {
+      const result = await getReservationsPaginated({ page, limit: size, status: "0" });
+      serverReservations = result.reservations;
+      serverTotal = result.total;
+      serverPage = page;
+    } catch {
+      serverReservations = [];
+      serverTotal = 0;
+    } finally {
+      serverLoading = false;
+    }
+  }
+
+  let didInit = $state(false);
+
+  $effect(() => {
+    if (!didInit) {
+      didInit = true;
+      doFetch(1, 5);
+    }
   });
 
-  let displayStock = $derived(productsStore.isLoading ? "..." : (productsStore.data?.reduce((sum, p) => sum + (p.quantity || 0), 0) || 98617));
-  let displayReserved = $derived(reservationsStore.isLoading ? "..." : (reservationsStore.data?.reduce((sum, r) => sum + (r.quantity || 0), 0) || 0));
-  let isLoading = $derived(productsStore.isLoading || reservationsStore.isLoading);
+  function handlePageChange(page, size) {
+    doFetch(page, size);
+  }
+
+  function getStatusInfo(status) {
+    switch (status) {
+      case 0: return { label: "Pendente" };
+      case 1: return { label: "Confirmada" };
+      case 2: return { label: "Cancelada" };
+      default: return { label: "Cancelada" };
+    }
+  }
+
+  function refetchAll() { doFetch(serverPage, serverSize); productsStore.refetch(); }
+
+  function handleApprove(id) {
+    approveReservation(id)
+      .then(() => { refetchAll(); toast.success("Reserva aprovada com sucesso."); })
+      .catch(() => toast.error("Erro ao aprovar reserva."));
+  }
+
+  function handleReject(id) {
+    rejectReservation(id)
+      .then(() => { refetchAll(); toast.success("Reserva rejeitada."); })
+      .catch(() => toast.error("Erro ao rejeitar reserva."));
+  }
+
+  function handleReset(id) {
+    resetReservation(id)
+      .then(() => { refetchAll(); toast.success("Reserva redefinida para pendente."); })
+      .catch(() => toast.error("Erro ao redefinir reserva."));
+  }
+
+  function handleRestore(id) {
+    restoreReservation(id)
+      .then(() => { refetchAll(); toast.success("Reserva restaurada."); })
+      .catch(() => toast.error("Erro ao restaurar reserva."));
+  }
 
   const columns = [
     { key: "image", header: "Imagem" },
     { key: "ref", header: "Referência", render: (r) => `<span class="font-semibold">${r.ref || r.product?.ref || "-"}</span>` },
-    { key: "comercial", header: "Comercial", render: (r) => r.name || "-" },
+    { key: "comercial", header: "Comercial", render: (r) => r.user?.name || "-" },
     { key: "cor", header: "Cor", render: (r) => r.variant?.color || "-" },
     { key: "tamanho", header: "Tamanho", render: (r) => r.variant?.size || "-" },
     { key: "qnt", header: "Qnt. Reservada", render: (r) => `<span class="font-bold">${r.quantity}</span>` },
-    { key: "data", header: "Data", render: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString("pt-PT") : "-", className: "text-slate-400" },
+    { key: "estado", header: "Estado" },
+    { key: "data", header: "Data", render: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString("pt-PT") : "-", className: "text-slate-500" },
+    { key: "acoes", header: "Ações", className: "text-right", headerClassName: "text-right" },
   ];
 </script>
 
@@ -68,11 +130,16 @@
     </div>
     <DataTable
       {columns}
-      data={filteredReservations}
-      {isLoading}
+      data={serverReservations}
+      isLoading={serverLoading}
       loadingMessage="A carregar dados..."
       emptyMessage="Sem dados disponíveis."
       rowKey={(r) => r.id}
+      totalRows={serverTotal}
+      bind:page={serverPage}
+      bind:size={serverSize}
+      pageSizeOptions={[5, 10, 15]}
+      onPageChange={handlePageChange}
     >
       {#snippet cell(row, col)}
         {#if col.key === "image"}
@@ -81,6 +148,31 @@
           {:else}
             <div class="size-9 flex items-center justify-center rounded-md border border-slate-100 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-900 text-xs">-</div>
           {/if}
+        {:else if col.key === "estado"}
+          <StatusBadge status={getStatusInfo(row.status).label} />
+        {:else if col.key === "acoes"}
+          <div class="flex items-center gap-1">
+            {#if row.status === 0}
+              <Button onclick={() => handleApprove(row.id)} class="h-8 gap-1 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-none px-3">
+                <Check class="size-3.5" />
+                <span>Aprovar</span>
+              </Button>
+              <Button onclick={() => handleReject(row.id)} class="h-8 gap-1 text-xs rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold shadow-none px-3">
+                <X class="size-3.5" />
+                <span>Rejeitar</span>
+              </Button>
+            {:else if row.status === 1}
+              <Button onclick={() => handleReset(row.id)} class="h-8 gap-1 text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-none px-3">
+                <RotateCcw class="size-3.5" />
+                <span>Reverter</span>
+              </Button>
+            {:else if row.status === 2}
+              <Button onclick={() => handleRestore(row.id)} class="h-8 gap-1 text-xs rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-none px-3">
+                <RotateCcw class="size-3.5" />
+                <span>Restaurar</span>
+              </Button>
+            {/if}
+          </div>
         {:else if col.render}
           {@html col.render(row)}
         {/if}

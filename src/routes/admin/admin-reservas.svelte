@@ -1,6 +1,6 @@
 <script>
-  import { getReservations, deleteReservation, getProducts, getUsers, createReservation } from "@/lib/utils/stock-api";
-  import { Plus } from "lucide-svelte";
+  import { getReservationsPaginated, deleteReservation, getProducts, createReservation, updateReservation, approveReservation, rejectReservation, restoreReservation, resetReservation, getCommercialUsers, getQuotes } from "@/lib/utils/stock-api";
+  import { Plus, Check, X, RotateCcw } from "lucide-svelte";
   import { toast } from "svelte-sonner";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
   import { createCrudModal } from "@/lib/state/crud-modal.svelte";
@@ -16,51 +16,92 @@
   import AdminModal from "@/lib/components/ui/admin-modal.svelte";
   import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
   import DetailGrid from "@/lib/components/ui/detail-grid.svelte";
+  import { getStringParam, getNumberParam, writeSearchParams } from "@/lib/utils/url-sync.svelte";
 
   function getStatusInfo(status) {
     switch (status) {
-      case 0: return { label: "Pendente", statusText: "pendente" };
-      case 1: return { label: "Aprovada", statusText: "approved" };
-      default: return { label: "Rejeitada", statusText: "rejected" };
+      case 0: return { label: "Pendente" };
+      case 1: return { label: "Confirmada" };
+      case 2: return { label: "Cancelada" };
+      default: return { label: "Cancelada" };
     }
   }
 
   let { searchQuery = "" } = $props();
 
-  const reservationsStore = createAsyncStore(() => getReservations());
   const productsStore = createAsyncStore(getProducts);
-  const usersStore = createAsyncStore(getUsers);
+  const commercialUsersStore = createAsyncStore(getCommercialUsers);
+  const quotesStore = createAsyncStore(() => getQuotes({ limit: 200 }));
 
   let crud = createCrudModal();
-  let selectedEstado = $state("Todos");
-  let form = $state({ name: "", productId: "", variantId: "", quantity: "1", message: "", proposal: "", order: "", status: "0" });
+  let selectedEstado = $state(getStringParam("estado", "Todos"));
+  let form = $state({ userId: "", productId: "", variantId: "", quantity: "1", message: "", status: "0", quoteId: "" });
 
   let selectedProduct = $derived(
     form.productId ? (productsStore.data || []).find((p) => p.id.toString() === form.productId) || null : null
   );
 
-  let filteredReservations = $derived.by(() => {
-    let result = reservationsStore.data || [];
-    if (selectedEstado !== "Todos") {
-      result = result.filter((res) => {
-        if (selectedEstado === "Pendente") return res.status === 0;
-        if (selectedEstado === "Aprovada") return res.status === 1;
-        if (selectedEstado === "Rejeitada") return res.status !== 0 && res.status !== 1;
-        return true;
+  // --- Server-side pagination ---
+  let serverReservations = $state([]);
+  let serverTotal = $state(0);
+  let serverPage = $state(getNumberParam("page", 1));
+  let serverSize = $state(getNumberParam("size", 25));
+  let serverLoading = $state(false);
+
+  function statusToBackend(status) {
+    if (status === "Todos") return undefined;
+    if (status === "Pendente") return "0";
+    if (status === "Confirmada") return "1";
+    return "2";
+  }
+
+  async function doFetch(page, size) {
+    serverLoading = true;
+    try {
+      const result = await getReservationsPaginated({
+        page,
+        limit: size,
+        search: searchQuery || undefined,
+        status: statusToBackend(selectedEstado),
       });
+      serverReservations = result.reservations;
+      serverTotal = result.total;
+      serverPage = page;
+    } catch {
+      serverReservations = [];
+      serverTotal = 0;
+    } finally {
+      serverLoading = false;
     }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter((res) =>
-        (res.name || "").toLowerCase().includes(q) ||
-        (res.ref || res.product?.ref || "").toLowerCase().includes(q)
-      );
-    }
-    return result;
+  }
+
+  $effect(() => {
+    searchQuery;
+    selectedEstado;
+    doFetch(1, serverSize);
   });
 
+  $effect(() => {
+    writeSearchParams({
+      page: serverPage > 1 ? serverPage : undefined,
+      size: serverSize !== 25 ? serverSize : undefined,
+      estado: selectedEstado !== "Todos" ? selectedEstado : undefined,
+    });
+  });
+
+  function handlePageChange(page, size) {
+    doFetch(page, size);
+  }
+
+  function refetchReservations() {
+    doFetch(serverPage, serverSize);
+  }
+
   let userOptions = $derived(
-    (usersStore.data || []).length > 0 ? usersStore.data.map((u) => ({ value: u.name, label: u.name })) : [{ value: "Administrador", label: "Administrador" }]
+    (commercialUsersStore.data || []).map((u) => ({ value: u.id.toString(), label: u.name }))
+  );
+  let quoteOptions = $derived(
+    (quotesStore.data?.data || []).map((q) => ({ value: q.id.toString(), label: q.reference }))
   );
   let productOptions = $derived((productsStore.data || []).map((p) => ({ value: p.id.toString(), label: `${p.ref} - ${p.name}` })));
   let variantOptions = $derived(
@@ -69,25 +110,24 @@
     })) : []
   );
 
-  function resetForm() { form = { name: "", productId: "", variantId: "", quantity: "1", message: "", proposal: "", order: "", status: "0" }; }
+  function resetForm() { form = { userId: "", productId: "", variantId: "", quantity: "1", message: "", status: "0", quoteId: "" }; }
 
   function handleOpenAdd() {
     resetForm();
-    form.name = usersStore.data?.[0]?.name || "";
+    form.userId = commercialUsersStore.data?.[0]?.id?.toString() || "";
     form.productId = productsStore.data?.[0]?.id?.toString() || "";
     crud.openAdd();
   }
 
   function handleOpenEdit(res) {
-    form = { name: res.name || "", productId: res.productId.toString(), variantId: res.variantId?.toString() || "",
-      quantity: res.quantity.toString(), message: res.message || "", proposal: res.proposal?.toString() || "",
-      order: res.order || "", status: res.status.toString() };
+    form = { userId: res.userId?.toString() || "", productId: res.productId.toString(), variantId: res.variantId?.toString() || "",
+      quantity: res.quantity.toString(), message: res.message || "", status: res.status.toString(), quoteId: res.quoteId?.toString() || "" };
     crud.openEdit(res);
   }
 
   async function handleSaveAdd(e) {
     e.preventDefault();
-    if (!form.name || !form.productId) { toast.error("Comercial e Produto são obrigatórios."); return; }
+    if (!form.userId || !form.productId) { toast.error("Comercial e Produto são obrigatórios."); return; }
     const prod = (productsStore.data || []).find((p) => p.id.toString() === form.productId);
     if (!prod) return;
     let colorName = "Geral";
@@ -97,39 +137,95 @@
     }
     try {
       await createReservation({
-        name: form.name, id_product: parseInt(form.productId), quantity: parseInt(form.quantity) || 1,
+        userId: parseInt(form.userId), id_product: parseInt(form.productId), quantity: parseInt(form.quantity) || 1,
         message: form.message, color: colorName, size: "",
-        proposal: form.proposal ? parseFloat(form.proposal) : undefined, order: form.order || undefined,
+        quoteId: form.quoteId ? parseInt(form.quoteId) : undefined,
       });
-      reservationsStore.refetch();
+      refetchReservations();
       toast.success("Reserva criada com sucesso."); crud.close();
     } catch {
-      toast.success("Reserva criada com sucesso (Modo Local)."); crud.close();
+      toast.error("Erro ao criar reserva."); crud.close();
     }
   }
 
-  function handleSaveEdit(e) {
+  async function handleSaveEdit(e) {
     e.preventDefault();
     if (!crud.selected) return;
-    toast.success("Reserva atualizada com sucesso."); crud.close();
+    try {
+      await updateReservation(crud.selected.id, {
+        quantity: parseInt(form.quantity) || 1,
+        message: form.message,
+        status: parseInt(form.status),
+        quoteId: form.quoteId ? parseInt(form.quoteId) : undefined,
+      });
+      refetchReservations();
+      toast.success("Reserva atualizada com sucesso.");
+      crud.close();
+    } catch {
+      toast.error("Erro ao atualizar reserva.");
+    }
   }
 
-  function handleDelete() {
+  async function handleApprove(id) {
+    try {
+      await approveReservation(id);
+      refetchReservations();
+      toast.success("Reserva confirmada com sucesso.");
+    } catch {
+      toast.error("Erro ao confirmar reserva.");
+    }
+  }
+
+  async function handleReject(id) {
+    try {
+      await rejectReservation(id);
+      refetchReservations();
+      toast.success("Reserva rejeitada.");
+    } catch {
+      toast.error("Erro ao rejeitar reserva.");
+    }
+  }
+
+  async function handleRestore(id) {
+    try {
+      await restoreReservation(id);
+      refetchReservations();
+      toast.success("Reserva restaurada.");
+    } catch {
+      toast.error("Erro ao restaurar reserva.");
+    }
+  }
+
+  async function handleReset(id) {
+    try {
+      await resetReservation(id);
+      refetchReservations();
+      toast.success("Reserva redefinida para pendente.");
+    } catch {
+      toast.error("Erro ao redefinir reserva.");
+    }
+  }
+
+  async function handleDelete() {
     if (!crud.selected) return;
-    deleteReservation(crud.selected.id).then(() => reservationsStore.refetch());
-    toast.success("Reserva eliminada com sucesso.");
-    crud.close();
+    try {
+      await deleteReservation(crud.selected.id);
+      refetchReservations();
+      toast.success("Reserva eliminada com sucesso.");
+      crud.close();
+    } catch {
+      toast.error("Erro ao eliminar reserva.");
+    }
   }
 
   const columns = [
-    { key: "comercial", header: "Comercial", render: (r) => `<span class="font-semibold">${r.name || "-"}</span>` },
+    { key: "comercial", header: "Comercial", render: (r) => `<span class="font-semibold">${r.user?.name || "-"}</span>` },
     { key: "ref", header: "Referência", render: (r) => `<span class="font-semibold">${r.ref || r.product?.ref || "-"}</span>` },
-    { key: "encomenda", header: "Encomenda", render: (r) => r.order || "-" },
     { key: "cor", header: "Cor", render: (r) => r.variant?.color || "-" },
     { key: "tamanho", header: "Tamanho", render: (r) => r.variant?.size || "-" },
     { key: "quantidade", header: "Quantidade", render: (r) => `<span class="font-bold">${r.quantity}</span>` },
     { key: "mensagem", header: "Mensagem", render: (r) => `<span class="max-w-[150px] truncate block" title="${r.message || ''}">${r.message || "-"}</span>` },
-    { key: "orcamento", header: "Orçamento", render: (r) => r.proposal ? `${r.proposal} €` : "-" },
+    { key: "orcamento", header: "Orçamento", render: (r) => r.quote ? `${r.quote.reference}` : "-" },
     { key: "estado", header: "Estado" },
     { key: "data", header: "Data", render: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString("pt-PT") : "-", className: "text-slate-400" },
     { key: "acoes", header: "Ações", className: "text-right", headerClassName: "text-right" },
@@ -147,22 +243,41 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
       <FormSelectField label="Estado" id="filter-estado-res" bind:value={selectedEstado}
         options={[{ value: "Todos", label: "Todos" }, { value: "Pendente", label: "Pendente" },
-          { value: "Aprovada", label: "Aprovada" }, { value: "Rejeitada", label: "Rejeitada" }]} />
+          { value: "Confirmada", label: "Confirmada" }, { value: "Cancelada", label: "Cancelada" }]} />
     </div>
   </PageCard>
 
-  <DataTable columns={columns} data={filteredReservations} isLoading={reservationsStore.isLoading}
-    loadingMessage="A carregar reservas..." emptyMessage="Sem reservas disponíveis." rowKey={(r) => r.id}>
+  <DataTable columns={columns} data={serverReservations} isLoading={serverLoading}
+    loadingMessage="A carregar reservas..." emptyMessage="Sem reservas disponíveis." rowKey={(r) => r.id}
+    totalRows={serverTotal} bind:page={serverPage} bind:size={serverSize} onPageChange={handlePageChange}>
     {#snippet cell(row, col)}
       {#if col.key === "estado"}
         {@const info = getStatusInfo(row.status)}
         <StatusBadge status={info.label} />
       {:else if col.key === "acoes"}
-        <RowActions
-          onView={() => crud.openView(row)}
-          onEdit={() => handleOpenEdit(row)}
-          onDelete={() => crud.openDelete(row)}
-        />
+        <div class="flex items-center justify-end gap-1">
+          {#if row.status === 0}
+            <Button variant="ghost" size="icon" onclick={() => handleApprove(row.id)} class="size-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Confirmar reserva">
+              <Check class="size-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onclick={() => handleReject(row.id)} class="size-8 text-red-500 hover:text-red-700 hover:bg-red-50" title="Rejeitar reserva">
+              <X class="size-4" />
+            </Button>
+          {:else if row.status === 1}
+            <Button variant="ghost" size="icon" onclick={() => handleReset(row.id)} class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Reverter para pendente">
+              <RotateCcw class="size-4" />
+            </Button>
+          {:else if row.status === 2}
+            <Button variant="ghost" size="icon" onclick={() => handleRestore(row.id)} class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Restaurar reserva">
+              <RotateCcw class="size-4" />
+            </Button>
+          {/if}
+          <RowActions
+            onView={() => crud.openView(row)}
+            onEdit={() => handleOpenEdit(row)}
+            onDelete={() => crud.openDelete(row)}
+          />
+        </div>
       {:else if col.render}
         {@html col.render(row)}
       {/if}
@@ -176,34 +291,33 @@
         <Button type="submit" form="reservation-form" class="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Salvar</Button>
       {/snippet}
       <form id="reservation-form" onsubmit={crud.isAdd ? handleSaveAdd : handleSaveEdit} class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormSelectField label="Comercial (Nome)" id="res-comercial" bind:value={form.name} options={userOptions} placeholder="Selecione um comercial" />
-        <FormField label="Referência Encomenda" for="res-order">
-          <Input id="res-order" placeholder="Ex: ENC-2026-01" bind:value={form.order} />
-        </FormField>
+        <FormSelectField label="Comercial" id="res-comercial" bind:value={form.userId} options={userOptions} placeholder="Selecione um comercial" />
+        <div class="flex flex-col gap-1.5">
+          <label for="res-quote" class="text-xs font-semibold text-slate-600 dark:text-slate-400">Orçamento</label>
+          <SearchableSelect id="res-quote" bind:value={form.quoteId} options={quoteOptions} placeholder="Selecionar orçamento (opcional)" searchPlaceholder="Procurar por referência..." emptyMessage="Nenhum orçamento encontrado." />
+        </div>
         <div class="flex flex-col gap-1.5 md:col-span-2">
-          <label for="res-produto" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Selecionar Produto</label>
+          <label for="res-produto" class="text-xs font-semibold text-slate-600 dark:text-slate-400">Selecionar Produto</label>
           <SearchableSelect id="res-produto" bind:value={form.productId} options={productOptions} disabled={crud.isEdit} placeholder="Selecione o produto" />
         </div>
         {#if selectedProduct && selectedProduct.variants && selectedProduct.variants.length > 0}
           <div class="flex flex-col gap-1.5 md:col-span-2">
-            <label for="res-variant" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Variante (Cor / Tamanho)</label>
+            <label for="res-variant" class="text-xs font-semibold text-slate-600 dark:text-slate-400">Variante (Cor / Tamanho)</label>
             <SearchableSelect id="res-variant" bind:value={form.variantId} options={variantOptions} disabled={crud.isEdit} placeholder="Geral (Sem variante específica)" />
           </div>
         {/if}
         <FormField label="Quantidade" for="res-qty">
           <Input id="res-qty" type="number" required min="1" bind:value={form.quantity} />
         </FormField>
-        <FormField label="Orçamento (€)" for="res-proposal">
-          <Input id="res-proposal" type="number" step="0.01" min="0" placeholder="Ex: 150.00" bind:value={form.proposal} />
-        </FormField>
+
         <div class="flex flex-col gap-1.5 md:col-span-2">
-          <label for="res-message" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Mensagem / Observações</label>
+          <label for="res-message" class="text-xs font-semibold text-slate-600 dark:text-slate-400">Mensagem / Observações</label>
           <textarea id="res-message" bind:value={form.message} placeholder="Nota ou comentário da reserva..."
             class="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-800 focus:border-amber-400 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 min-h-[80px]"></textarea>
         </div>
         {#if crud.isEdit}
           <FormSelectField label="Estado da Reserva" id="res-status" bind:value={form.status}
-            options={[{ value: "0", label: "Pendente" }, { value: "1", label: "Aprovada" }, { value: "2", label: "Rejeitada" }]}
+            options={[{ value: "0", label: "Pendente" }, { value: "1", label: "Confirmada" }, { value: "2", label: "Cancelada" }]}
             placeholder="Selecionar estado" />
         {/if}
       </form>
@@ -216,12 +330,11 @@
         <Button onclick={crud.close} class="h-10 bg-amber-400 hover:bg-amber-500 text-[#1F2937] px-5 font-semibold">Fechar</Button>
       {/snippet}
       <DetailGrid items={[
-        { label: "Comercial", value: crud.selected.name || "Sem Nome" },
+        { label: "Comercial", value: crud.selected.user?.name || "Sem Nome" },
         { label: "Produto (Ref)", value: `${crud.selected.product?.name || "Produto"} (${crud.selected.ref || crud.selected.product?.ref})` },
-        { label: "Encomenda", value: crud.selected.order || "-" },
         { label: "Variante", value: `${crud.selected.variant?.color || "-"}${crud.selected.variant?.size ? ` / ${crud.selected.variant.size}` : ""}` },
         { label: "Quantidade", value: `${crud.selected.quantity} unidades` },
-        { label: "Orçamento", value: crud.selected.proposal ? `${crud.selected.proposal.toFixed(2)} €` : "-" },
+        { label: "Orçamento", value: crud.selected.quote?.reference || "-" },
         { label: "Estado", value: getStatusInfo(crud.selected.status).label },
       ]} />
       {#if crud.selected.message}
@@ -235,5 +348,5 @@
 
   <ConfirmDeleteModal open={crud.isDelete} onClose={crud.close} onConfirm={handleDelete}
     title="Eliminar Reserva"
-    itemName={crud.selected ? `${crud.selected.quantity}x ${crud.selected.product?.name || "Produto"} (${crud.selected.name})` : ""} />
+    itemName={crud.selected ? `${crud.selected.quantity}x ${crud.selected.product?.name || "Produto"} (${crud.selected.user?.name || "-"})` : ""} />
 </div>

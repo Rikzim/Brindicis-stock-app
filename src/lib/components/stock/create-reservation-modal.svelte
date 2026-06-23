@@ -1,127 +1,154 @@
 <script>
-  import { X, Info, ShieldCheck, ChevronLeft } from "@/lib/utils/icon-map";
+  import { X, Info, ShieldCheck, ChevronLeft, Plus } from "@/lib/utils/icon-map";
   import { toast } from "svelte-sonner";
-  import { createReservation, getReservations, getUsers } from "@/lib/utils/stock-api";
+  import { createReservation, getReservations, getCommercialUsers, getQuotes } from "@/lib/utils/stock-api";
   import { authStore } from "@/lib/state/auth-store";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
   import SearchableSelect from "@/lib/components/ui/searchable-select.svelte";
+  import Input from "@/lib/components/ui/input.svelte";
   import Button from "@/lib/components/ui/button.svelte";
 
   let {
     product,
     onClose = () => {},
+    onSuccess = () => {},
   } = $props();
 
   const reservationsStore = createAsyncStore(() => getReservations());
-  const usersStore = createAsyncStore(getUsers);
+  const commercialUsersStore = createAsyncStore(getCommercialUsers);
+  const quotesStore = createAsyncStore(() => getQuotes({ limit: 200 }));
 
-  let quantities = $state({});
+  let selectedColor = $state("");
+  let selectedSize = $state("");
+  let selectedQty = $state(0);
+  let reservationLines = $state([]);
   let formState = $state({
-    comercial: "",
-    encomenda: "—",
+    userId: "",
     mensagem: "",
-    orcamento: false,
+    quoteId: "",
   });
   let isSubmitting = $state(false);
 
-  // Initialize quantities
-  $effect(() => {
-    const initial = {};
-    product.colors?.forEach((c) => {
-      initial[c.name] = 0;
-    });
-    if (product.colors?.length === 0) {
-      initial["default"] = 0;
-    }
-    quantities = initial;
-  });
-
-  // Set user name
+  // Set default user
   $effect(() => {
     const user = $authStore.user;
-    if (user?.name && !formState.comercial) {
-      formState.comercial = user.name;
+    if (user?.id && !formState.userId) {
+      formState.userId = user.id.toString();
     }
   });
 
-  let comercialOptions = $derived.by(() => {
-    const set = new Set();
-    const user = $authStore.user;
-    if (user?.name) set.add(user.name);
-    (usersStore.data || []).forEach((u) => { if (u.name) set.add(u.name); });
-    (reservationsStore.data || []).forEach((r) => { if (r.name) set.add(r.name); });
-    return Array.from(set).map((name) => ({ value: name, label: name }));
+  // Reset selections when product changes
+  $effect(() => {
+    selectedColor = "";
+    selectedSize = "";
+    selectedQty = 0;
+    reservationLines = [];
   });
 
-  let encomendaOptions = $derived.by(() => {
-    const set = new Set();
-    (reservationsStore.data || []).forEach((r) => { if (r.order) set.add(r.order); });
-    return Array.from(set).map((order) => ({ value: order, label: order }));
-  });
+  let colorOptions = $derived(
+    [...new Set(product.variants?.map((v) => v.color) || [])]
+      .map((c) => {
+        const total = (product.variants || [])
+          .filter((v) => v.color === c)
+          .reduce((sum, v) => sum + (v.quantity - v.reserved), 0);
+        return { value: c, label: `${c} (${total})` };
+      })
+  );
 
-  function getAvailableForColor(colorName) {
-    if (colorName === "default") return product.quantity - product.reserved;
-    const colorVariants = product.variants?.filter((v) => v.color === colorName) || [];
-    if (colorVariants.length > 0) {
-      return colorVariants.reduce((sum, v) => sum + (v.quantity - v.reserved), 0);
-    }
-    return product.quantity - product.reserved;
-  }
+  let filteredSizes = $derived(
+    (product.variants || []).filter((v) => v.color === selectedColor)
+  );
 
-  function handleQuantityChange(color, delta) {
-    const current = quantities[color] || 0;
-    const next = Math.max(0, current + delta);
-    const available = getAvailableForColor(color);
-    if (next > available) {
-      toast.error(`Apenas ${available} unidades disponíveis para a cor ${color}.`);
+  let sizeOptions = $derived(
+    filteredSizes
+      .map((v) => ({ value: v.size || "", label: `${v.size || "Único"} (${v.quantity - v.reserved})` }))
+      .filter((v, i, a) => a.findIndex((x) => x.value === v.value) === i)
+  );
+
+  let selectedVariant = $derived(
+    filteredSizes.find((v) => (v.size || "") === (selectedSize || "")) ?? null
+  );
+
+  let availableForSelection = $derived(
+    selectedVariant
+      ? selectedVariant.quantity - selectedVariant.reserved
+      : selectedColor
+        ? (product.variants || [])
+            .filter((v) => v.color === selectedColor)
+            .reduce((sum, v) => sum + (v.quantity - v.reserved), 0)
+        : 0
+  );
+
+  let linesForVariant = $derived(
+    reservationLines.filter(
+      (l) => l.color === selectedColor && l.size === (selectedSize || null)
+    )
+  );
+
+  let reservedForVariant = $derived(
+    linesForVariant.reduce((s, l) => s + l.qty, 0)
+  );
+
+  let totalReservedQty = $derived(
+    reservationLines.reduce((sum, l) => sum + l.qty, 0)
+  );
+
+  let userOptions = $derived(
+    (commercialUsersStore.data || []).map((u) => ({ value: u.id.toString(), label: u.name }))
+  );
+  let quoteOptions = $derived(
+    (quotesStore.data?.data || []).map((q) => ({ value: q.id.toString(), label: q.reference }))
+  );
+
+  function handleAddLine() {
+    if (!selectedColor || selectedQty <= 0) return;
+    if (!selectedVariant && product.variants?.length) return;
+
+    if (selectedQty > availableForSelection - reservedForVariant) {
+      toast.error(`Apenas ${availableForSelection - reservedForVariant} unidades disponíveis.`);
       return;
     }
-    quantities = { ...quantities, [color]: next };
+
+    reservationLines = [
+      ...reservationLines,
+      { color: selectedColor, size: selectedSize || null, qty: selectedQty },
+    ];
+    selectedQty = 0;
+  }
+
+  function handleRemoveLine(index) {
+    reservationLines = reservationLines.filter((_, i) => i !== index);
   }
 
   async function handleSave() {
-    const totalQty = Object.values(quantities).reduce((a, b) => a + b, 0);
-    if (totalQty === 0) {
-      toast.error("Por favor, selecione pelo menos 1 unidade.");
+    if (reservationLines.length === 0) {
+      toast.error("Adicione pelo menos uma linha de reserva.");
       return;
     }
-
-    if (!formState.comercial.trim()) {
-      toast.error("O campo Comercial é obrigatório.");
+    if (!formState.userId) {
+      toast.error("Selecione um comercial.");
       return;
     }
 
     isSubmitting = true;
-    const reservationPromises = [];
-
-    const variantByColor = new Map(product.variants?.map((v) => [v.color, v]));
-
     try {
-      for (const [colorName, qty] of Object.entries(quantities)) {
-        if (qty > 0) {
-          const variant = variantByColor.get(colorName);
-
-          const payload = {
-            name: formState.comercial,
-            id_product: product.id,
-            quantity: qty,
-            color: colorName === "default" ? "" : colorName,
-            size: variant?.size || undefined,
-            message: formState.mensagem || undefined,
-            order: (formState.encomenda === "—" || !formState.encomenda) ? undefined : formState.encomenda,
-            proposal: formState.orcamento ? 1 : 0,
-          };
-
-          reservationPromises.push(createReservation(payload));
-        }
-      }
-
-      await Promise.all(reservationPromises);
-      toast.success("Reserva criada com sucesso!");
+      await Promise.all(reservationLines.map((line) =>
+        createReservation({
+          userId: parseInt(formState.userId),
+          id_product: product.id,
+          quantity: line.qty,
+          color: line.color,
+          size: line.size || undefined,
+          message: formState.mensagem || undefined,
+          quoteId: formState.quoteId ? parseInt(formState.quoteId) : undefined,
+        })
+      ));
+      toast.success("Reservas criadas com sucesso!");
+      onSuccess();
       onClose();
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao criar reserva. Tente novamente.");
+      toast.error("Erro ao criar reservas. Tente novamente.");
     } finally {
       isSubmitting = false;
     }
@@ -146,129 +173,134 @@
 
   <!-- Content -->
   <div class="flex-1 overflow-y-auto px-5 pb-24 flex flex-col gap-5">
-    <!-- Section: Selecionar Quantidades -->
-    <div class="flex flex-col gap-2">
-      <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-        SELECIONAR QUANTIDADES
+    <!-- Section: Selecionar Variante -->
+    <div class="flex flex-col gap-3">
+      <span class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">
+        SELECIONAR VARIANTE
       </span>
 
-      <!-- Table Header -->
-      <div class="flex justify-between text-[10px] font-bold text-slate-400/90 tracking-wider pb-1.5 border-b border-slate-100 dark:border-slate-800/40">
-        <span>Cor</span>
-        <div class="flex gap-12 pr-2">
-          <span>Quantidade</span>
-          <span>Disponível</span>
+      <div class="grid grid-cols-[1fr_1fr_80px] gap-3 items-end">
+        <!-- Color -->
+        <div class="flex flex-col gap-1.5">
+          <span class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">Cor</span>
+          <SearchableSelect
+            bind:value={selectedColor}
+            options={colorOptions}
+            placeholder="Selecionar cor"
+            searchPlaceholder="Procurar..."
+            emptyMessage="Sem cores disponíveis."
+          />
+        </div>
+
+        <!-- Size -->
+        <div class="flex flex-col gap-1.5">
+          <span class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">Tamanho</span>
+          <SearchableSelect
+            bind:value={selectedSize}
+            options={sizeOptions}
+            placeholder="Selecionar tamanho"
+            searchPlaceholder="Procurar..."
+            emptyMessage="Sem tamanhos."
+          />
+        </div>
+
+        <!-- Qty -->
+        <div class="flex flex-col gap-1.5">
+          <span class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">Qtd</span>
+          <Input
+            type="number"
+            min="0"
+            max={Math.max(availableForSelection, 0)}
+            bind:value={selectedQty}
+            placeholder="0"
+            class="h-9 text-center"
+          />
         </div>
       </div>
 
-      <!-- Rows -->
-      <div class="flex flex-col max-h-[160px] overflow-y-auto pr-1">
-        {#if product.colors && product.colors.length > 0}
-          {#each product.colors as c (c.name)}
-            {@const qty = quantities[c.name] || 0}
-            {@const available = getAvailableForColor(c.name)}
-            <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-b-0 dark:border-slate-800/40">
-              <div class="flex items-center">
-                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  {c.name}
-                </span>
-              </div>
-              <div class="flex items-center gap-10">
-                <div class="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
-                  <button
-                    type="button"
-                    onclick={() => handleQuantityChange(c.name, -1)}
-                    class="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-medium dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
-                  >
-                    —
-                  </button>
-                  <span class="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
-                    {qty}
-                  </span>
-                  <button
-                    type="button"
-                    onclick={() => handleQuantityChange(c.name, 1)}
-                    class="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
-                  >
-                    +
-                  </button>
-                </div>
-                <span class="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
-                  {available}
-                </span>
+      <Button
+        onclick={handleAddLine}
+        disabled={!selectedColor || selectedQty <= 0}
+        class="w-full h-9 bg-amber-400 hover:bg-amber-500 text-[#1F2937] font-semibold shadow-none rounded-lg"
+      >
+        <Plus class="size-4" />
+        <span>Adicionar linha</span>
+      </Button>
+
+      {#if selectedColor}
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-600">Disponível:</span>
+          <span class="inline-flex items-center rounded-lg bg-[#FBBF24] px-2 py-0.5 text-sm font-bold text-[#1F2937] shadow-sm">
+            {availableForSelection}
+          </span>
+          <span class="text-xs font-semibold text-slate-600">un.</span>
+        </div>
+      {/if}
+    </div>
+
+    <!-- Lines list -->
+    {#if reservationLines.length > 0}
+      <div class="flex flex-col gap-2">
+        <span class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">
+          Linhas a reservar ({totalReservedQty} un.)
+        </span>
+        <div class="flex flex-col divide-y divide-slate-100 dark:divide-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+          {#each reservationLines as line, i}
+            <div class="flex items-center justify-between px-3 py-2.5">
+              <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                {line.color}{line.size ? ` / ${line.size}` : ""}
+              </span>
+              <div class="flex items-center gap-3">
+                <span class="text-sm font-extrabold text-amber-600">{line.qty}</span>
+                <button
+                  type="button"
+                  onclick={() => handleRemoveLine(i)}
+                  class="size-8 flex items-center justify-center rounded-md text-slate-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Remover"
+                >
+                  <X class="size-4" />
+                </button>
               </div>
             </div>
           {/each}
-        {:else}
-          {@const qty = quantities["default"] || 0}
-          {@const available = getAvailableForColor("default")}
-          <div class="flex items-center justify-between py-2">
-            <div class="flex items-center">
-              <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Geral</span>
-            </div>
-            <div class="flex items-center gap-10">
-              <div class="flex items-center h-8 rounded-lg border border-slate-200 bg-white overflow-hidden dark:border-slate-800 dark:bg-slate-950">
-                <button
-                  type="button"
-                  onclick={() => handleQuantityChange("default", -1)}
-                  class="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-r border-slate-200 dark:border-slate-800"
-                >
-                  —
-                </button>
-                <span class="w-10 text-center text-xs font-semibold text-slate-750 dark:text-slate-350">
-                  {qty}
-                </span>
-                <button
-                  type="button"
-                  onclick={() => handleQuantityChange("default", 1)}
-                  class="w-8 h-full flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors font-semibold dark:hover:bg-slate-900 border-l border-slate-200 dark:border-slate-800"
-                >
-                  +
-                </button>
-              </div>
-              <span class="w-12 text-right text-sm font-bold text-slate-800 dark:text-slate-300">
-                {available}
-              </span>
-            </div>
-          </div>
-        {/if}
+        </div>
       </div>
-    </div>
+    {/if}
 
     <div class="border-t border-slate-100/80 dark:border-slate-800/40"></div>
 
     <!-- Form Fields -->
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-1.5">
-        <label for="comercial" class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+        <label for="comercial" class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">
           COMERCIAL
         </label>
         <SearchableSelect
           id="comercial"
-          bind:value={formState.comercial}
-          options={comercialOptions}
+          bind:value={formState.userId}
+          options={userOptions}
           placeholder="Selecionar comercial"
           searchPlaceholder="Pesquisar comercial..."
-          emptyMessage="Nenhum comercial encontrado. Digite para adicionar."
+          emptyMessage="Nenhum comercial encontrado."
         />
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label for="encomenda" class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-          Nº ENCOMENDA
+        <label for="quote" class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">
+          ORÇAMENTO
         </label>
         <SearchableSelect
-          id="encomenda"
-          bind:value={formState.encomenda}
-          options={encomendaOptions}
-          placeholder="Selecionar encomenda"
-          searchPlaceholder="Pesquisar encomenda..."
-          emptyMessage="Nenhuma encomenda encontrada. Digite para adicionar."
+          id="quote"
+          bind:value={formState.quoteId}
+          options={quoteOptions}
+          placeholder="Selecionar orçamento (opcional)"
+          searchPlaceholder="Procurar por referência..."
+          emptyMessage="Nenhum orçamento encontrado."
         />
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label for="mensagem" class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+        <label for="mensagem" class="text-[10px] font-bold text-slate-600 tracking-wider uppercase">
           MENSAGEM
         </label>
         <textarea
@@ -280,37 +312,24 @@
         ></textarea>
       </div>
 
-      <div class="flex items-center gap-2.5 py-1">
-        <input
-          type="checkbox"
-          id="orcamento"
-          bind:checked={formState.orcamento}
-          class="w-5 h-5 rounded border-slate-300 text-amber-500 focus:ring-amber-400 cursor-pointer accent-amber-500"
-        />
-        <label
-          for="orcamento"
-          class="text-sm font-semibold text-slate-750 dark:text-slate-200 cursor-pointer select-none"
-        >
-          Orçamento
-        </label>
-      </div>
+
     </div>
 
     <!-- Helper note -->
-    <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400/90 dark:text-slate-500">
-      <Info class="size-4 shrink-0 text-slate-400/80 dark:text-slate-650" />
-      <span>As reservas são válidas por 5 dias.</span>
+    <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-600/90 dark:text-slate-600">
+      <Info class="size-4 shrink-0 text-slate-600/80 dark:text-slate-650" />
+      <span>As reservas são válidas por 8 dias úteis.</span>
     </div>
   </div>
 
   <!-- Footer Buttons -->
-  <div class="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 flex items-center gap-3 dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-bottom-2 duration-300">
+  <div class="absolute bottom-0 left-0 right-0 border-t-2 border-slate-200 bg-slate-50 px-6 py-3 flex items-center gap-3 dark:border-slate-700 dark:bg-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-300">
     <Button variant="outline" onclick={onClose} class="h-11 px-5">
       <ChevronLeft class="size-4" />
       <span>Voltar</span>
     </Button>
 
-    <Button variant="default" disabled={isSubmitting} onclick={handleSave} class="flex-1 h-11 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] font-semibold active:scale-95">
+    <Button variant="default" disabled={isSubmitting || reservationLines.length === 0} onclick={handleSave} class="flex-1 h-11 bg-[#FBBF24] hover:bg-amber-500 text-[#1F2937] font-semibold active:scale-95">
       <ShieldCheck class="size-4" />
       <span>{isSubmitting ? "A guardar..." : "Reservar"}</span>
     </Button>

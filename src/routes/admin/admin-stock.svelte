@@ -1,5 +1,5 @@
 <script>
-  import { getProducts, getFamilies } from "@/lib/utils/stock-api";
+  import { getProducts, getProductsPaginated, getFamilies } from "@/lib/utils/stock-api";
   import { Plus, Download } from "lucide-svelte";
   import { apiClient } from "@/lib/utils/api-client";
   import { toast } from "svelte-sonner";
@@ -18,6 +18,7 @@
   import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
   import DetailGrid from "@/lib/components/ui/detail-grid.svelte";
   import AddProductModal from "@/lib/components/stock/add-product-modal.svelte";
+  import { getStringParam, getNumberParam, writeSearchParams } from "@/lib/utils/url-sync.svelte";
 
   async function downloadExport(url) {
     try {
@@ -39,7 +40,7 @@
     }
   }
 
-  const productsStore = createAsyncStore(getProducts);
+  const allProductsStore = createAsyncStore(getProducts);
   const familiesStore = createAsyncStore(getFamilies);
 
   let { searchQuery = "" } = $props();
@@ -48,63 +49,18 @@
   let showAddModal = $state(false);
   let editFullProduct = $state(null);
   let filters = $state({
-    selectedFornecedor: "Todas",
-    selectedFamilia: "Todas",
-    selectedDisponibilidade: "Todos",
-    selectedEstado: "Todos",
-    searchCaixa: "",
-    searchGaveta: "",
+    selectedFornecedor: getStringParam("fornecedor", "Todas"),
+    selectedFamilia: getStringParam("familia", "Todas"),
+    selectedDisponibilidade: getStringParam("disponibilidade", "Todos"),
+    selectedEstado: getStringParam("estado", "Todos"),
+    searchCaixa: getStringParam("caixa"),
+    searchGaveta: getStringParam("gaveta"),
   });
+
   let fornecedores = $derived.by(() => {
     const set = new Set(["Todas"]);
-    productsStore.data?.forEach((p) => { if (p.type) set.add(p.type); });
+    allProductsStore.data?.forEach((p) => { if (p.type) set.add(p.type); });
     return Array.from(set);
-  });
-
-  let stockRows = $derived.by(() => {
-    const rows = [];
-    const products = productsStore.data || [];
-    for (const product of products) {
-      if (filters.selectedFornecedor !== "Todas" && product.type !== filters.selectedFornecedor) continue;
-      if (filters.selectedFamilia !== "Todas" && product.family?.name !== filters.selectedFamilia) continue;
-      if (filters.selectedEstado !== "Todos" && (filters.selectedEstado === "Ativo" ? product.active !== 1 : product.active !== 0)) continue;
-
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        if (!product.ref.toLowerCase().includes(q) &&
-            !product.name.toLowerCase().includes(q) &&
-            !product.description?.toLowerCase().includes(q)) continue;
-      }
-
-      const totalQty = product.variants.reduce((sum, v) => sum + v.quantity, 0);
-      const totalReserved = product.variants.reduce((sum, v) => sum + v.reserved, 0);
-      const avail = totalQty - totalReserved;
-      if (filters.selectedDisponibilidade === "Com Stock" && avail <= 0) continue;
-      if (filters.selectedDisponibilidade === "Esgotado" && avail > 0) continue;
-
-      const colorList = (product.colors || []).map((c) => c.name).join(", ") || "-";
-      const drawerList = [...new Set(product.variants.map((v) => v.drawer).filter(Boolean))].join(", ") || product.drawer || "-";
-      const cxList = [...new Set(product.variants.map((v) => v.cx).filter(Boolean))].join(", ") || product.cx || "-";
-
-      if (filters.searchCaixa && !cxList.toLowerCase().includes(filters.searchCaixa.toLowerCase())) continue;
-      if (filters.searchGaveta && !drawerList.toLowerCase().includes(filters.searchGaveta.toLowerCase())) continue;
-
-      rows.push({
-        id: product.id, productId: product.id,
-        name: product.name, ref: product.ref,
-        image: product.images?.[0]?.url || null,
-        color: colorList,
-        quantity: totalQty,
-        reserved: totalReserved,
-        drawer: drawerList,
-        cx: cxList,
-        pvp: product.pvp,
-        fornecedor: product.type || "-",
-        family: product.family?.name || "-",
-        estado: product.active === 1 ? "Ativo" : "Inativo",
-      });
-    }
-    return rows;
   });
 
   let familyOptions = $derived((familiesStore.data || []).map((f) => ({ value: f.name, label: f.name })));
@@ -117,16 +73,105 @@
     { value: "Todos", label: "Todos" }, { value: "Ativo", label: "Ativo" }, { value: "Inativo", label: "Inativo" },
   ];
 
+  // --- Server-side pagination ---
+
+  let serverProducts = $state([]);
+  let serverTotal = $state(0);
+  let serverPage = $state(getNumberParam("page", 1));
+  let serverSize = $state(getNumberParam("size", 50));
+  let serverLoading = $state(false);
+
+  function buildQueryParams(page, size) {
+    return {
+      page,
+      limit: size,
+      search: searchQuery || undefined,
+      fornecedor: filters.selectedFornecedor !== "Todas" ? filters.selectedFornecedor : undefined,
+      familia: filters.selectedFamilia !== "Todas" ? filters.selectedFamilia : undefined,
+      disponibilidade: filters.selectedDisponibilidade !== "Todos" ? filters.selectedDisponibilidade : undefined,
+      estado: filters.selectedEstado !== "Todos" ? filters.selectedEstado : undefined,
+      caixa: filters.searchCaixa || undefined,
+      gaveta: filters.searchGaveta || undefined,
+    };
+  }
+
+  async function doFetch(page, size) {
+    serverLoading = true;
+    try {
+      const result = await getProductsPaginated(buildQueryParams(page, size));
+      serverProducts = result.products;
+      serverTotal = result.total;
+      serverPage = page;
+    } catch {
+      serverProducts = [];
+      serverTotal = 0;
+    } finally {
+      serverLoading = false;
+    }
+  }
+
+  $effect(() => {
+    searchQuery;
+    JSON.stringify(filters);
+    doFetch(1, serverSize);
+  });
+
+  $effect(() => {
+    writeSearchParams({
+      page: serverPage > 1 ? serverPage : undefined,
+      size: serverSize !== 50 ? serverSize : undefined,
+      fornecedor: filters.selectedFornecedor !== "Todas" ? filters.selectedFornecedor : undefined,
+      familia: filters.selectedFamilia !== "Todas" ? filters.selectedFamilia : undefined,
+      disponibilidade: filters.selectedDisponibilidade !== "Todos" ? filters.selectedDisponibilidade : undefined,
+      estado: filters.selectedEstado !== "Todos" ? filters.selectedEstado : undefined,
+      caixa: filters.searchCaixa || undefined,
+      gaveta: filters.searchGaveta || undefined,
+    });
+  });
+
+  function handlePageChange(page, size) {
+    doFetch(page, size);
+  }
+
+  // --- Row mapping (no client-side filtering — server handles it) ---
+
+  let stockRows = $derived(serverProducts.map((product) => {
+    const totalQty = product.variants.reduce((sum, v) => sum + v.quantity, 0);
+    const totalReserved = product.variants.reduce((sum, v) => sum + v.reserved, 0);
+    const colorList = (product.colors || []).map((c) => c.name).join(", ") || "-";
+    const drawerList = [...new Set(product.variants.map((v) => v.drawer).filter(Boolean))].join(", ") || product.drawer || "-";
+    const cxList = [...new Set(product.variants.map((v) => v.cx).filter(Boolean))].join(", ") || product.cx || "-";
+    return {
+      id: product.id, productId: product.id,
+      name: product.name, ref: product.ref,
+      image: product.images?.[0]?.url || null,
+      color: colorList,
+      quantity: totalQty,
+      reserved: totalReserved,
+      drawer: drawerList,
+      cx: cxList,
+      pvp: product.pvp,
+      fornecedor: product.type || "-",
+      family: product.family?.name || "-",
+      estado: product.active === 1 ? "Ativo" : "Inativo",
+    };
+  }));
+
   function handleAdd() { showAddModal = true; }
   function handleView(row) { crud.openView(row); }
   function handleEdit(row) {
-    editFullProduct = productsStore.data?.find((p) => p.id === row.productId) || null;
+    editFullProduct = allProductsStore.data?.find((p) => p.id === row.productId) || null;
     crud.openEdit(row);
   }
   function handleDelete(row) { crud.openDelete(row); }
 
   function handleDeleteConfirm() {
     toast.success("Produto removido com sucesso."); crud.close();
+  }
+
+  function handleMutationSuccess() {
+    allProductsStore.refetch();
+    doFetch(serverPage, serverSize);
   }
 
   const columns = [
@@ -174,8 +219,9 @@
     </div>
   </PageCard>
 
-  <DataTable columns={columns} data={stockRows} isLoading={productsStore.isLoading}
-    loadingMessage="A carregar produtos..." emptyMessage="Nenhum produto encontrado." rowKey={(r) => r.id}>
+  <DataTable columns={columns} data={stockRows} isLoading={serverLoading}
+    loadingMessage="A carregar produtos..." emptyMessage="Nenhum produto encontrado." rowKey={(r) => r.id}
+    bind:page={serverPage} bind:size={serverSize} totalRows={serverTotal} onPageChange={handlePageChange}>
     {#snippet cell(row, col)}
       {#if col.key === "image"}
         {#if row.image}
@@ -225,7 +271,7 @@
   <AddProductModal
     open={showAddModal}
     onClose={() => showAddModal = false}
-    onSuccess={() => productsStore.refetch()}
+    onSuccess={handleMutationSuccess}
     {fornecedores}
   />
 
@@ -233,7 +279,7 @@
     open={crud.isEdit}
     editProduct={editFullProduct}
     onClose={() => { editFullProduct = null; crud.close(); }}
-    onSuccess={() => productsStore.refetch()}
+    onSuccess={handleMutationSuccess}
     {fornecedores}
   />
 </div>

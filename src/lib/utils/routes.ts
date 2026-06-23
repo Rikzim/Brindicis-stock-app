@@ -1,10 +1,12 @@
 export const Routes = {
   stock: {
     products: '/stock/products',
+    productFilters: '/stock/products/filters',
     productCreate: '/stock/products',
     productDetail: (id: number) => `/stock/products/${id}` as const,
     categories: '/stock/categories',
     families: '/stock/families',
+    suppliers: '/stock/suppliers',
     familyDetail: (id: number) => `/stock/families/${id}` as const,
     reservations: '/stock/reservations',
     reservationDetail: (id: number) => `/stock/reservations/${id}` as const,
@@ -12,5 +14,10 @@ export const Routes = {
 
   users: {
     list: '/users',
+  },
+
+  quotes: {
+    list: '/quotes',
+    detail: (id: number) => `/quotes/${id}` as const,
   },
 };

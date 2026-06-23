@@ -1,18 +1,20 @@
 <script>
-  import { X, Info, ChevronLeft, Trash2, FileText } from "@/lib/utils/icon-map";
-  import { getReservations, deleteReservation } from "@/lib/utils/stock-api";
+  import { X, Info, ChevronLeft, Trash2, FileText, RotateCcw } from "@/lib/utils/icon-map";
+  import { getReservations, deleteReservation, restoreReservation, resetReservation } from "@/lib/utils/stock-api";
   import { toast } from "svelte-sonner";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
   import Button from "@/lib/components/ui/button.svelte";
+  import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
 
   let {
     product,
     onClose = () => {},
     onAddReservation = () => {},
+    onProductChange = () => {},
   } = $props();
 
   const reservationsStore = createAsyncStore(() => getReservations({ productId: product.id }));
-  let isDeletingId = $state(null);
+  let deletingReservation = $state(null);
 
   function formatDate(dateStr) {
     if (!dateStr) return "—";
@@ -28,19 +30,45 @@
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm("Tem certeza que deseja apagar esta reserva?")) return;
+  async function handleReset(id) {
+    try {
+      await resetReservation(id);
+      reservationsStore.refetch();
+      onProductChange();
+      toast.success("Reserva redefinida para pendente.");
+    } catch {
+      toast.error("Erro ao redefinir reserva.");
+    }
+  }
+
+  async function handleRestore(id) {
+    try {
+      await restoreReservation(id);
+      reservationsStore.refetch();
+      onProductChange();
+      toast.success("Reserva restaurada.");
+    } catch {
+      toast.error("Erro ao restaurar reserva.");
+    }
+  }
+
+  function handleDelete(id) {
+    deletingReservation = reservationsStore.data?.find((r) => r.id === id) ?? null;
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deletingReservation) return;
+    const id = deletingReservation.id;
+    deletingReservation = null;
 
     try {
-      isDeletingId = id;
       await deleteReservation(id);
       toast.success("Reserva apagada com sucesso!");
       reservationsStore.refetch();
+      onProductChange();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao apagar reserva.");
-    } finally {
-      isDeletingId = null;
     }
   }
 </script>
@@ -66,17 +94,18 @@
     <!-- Table Container -->
     <div class="w-full rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950 overflow-hidden flex flex-col min-h-[200px]">
       <!-- Table Header -->
-      <div class="grid grid-cols-12 bg-[#F8FAFC] px-4 py-2.5 text-[10px] font-bold text-slate-400 tracking-wider dark:bg-slate-900/50">
-        <span class="col-span-5 text-left">COMERCIAL</span>
-        <span class="col-span-3 text-center">QUANTIDADE</span>
-        <span class="col-span-2 text-center">DATA</span>
-        <span class="col-span-2 text-right">AÇÕES</span>
+      <div class="grid grid-cols-[1fr_1fr_auto_auto] sm:grid-cols-[1fr_1fr_auto_auto_auto] bg-[#F8FAFC] px-4 py-2.5 text-[10px] font-bold text-slate-500 tracking-wider dark:bg-slate-900/50 gap-x-2">
+        <span class="text-left">COMERCIAL</span>
+        <span class="text-center">VARIANTE</span>
+        <span class="text-center w-12">QTD</span>
+        <span class="text-center w-12">AÇÕES</span>
+        <span class="hidden sm:inline text-center w-16">DATA</span>
       </div>
 
       <!-- Table Body -->
       <div class="flex-1 flex flex-col">
         {#if reservationsStore.isLoading}
-          <div class="flex-1 flex items-center justify-center py-12 text-xs text-slate-400 font-semibold">
+          <div class="flex-1 flex items-center justify-center py-12 text-xs text-slate-500 font-semibold">
             A carregar reservas...
           </div>
         {:else if !reservationsStore.data || reservationsStore.data.length === 0}
@@ -85,7 +114,7 @@
             <p class="text-sm font-bold text-slate-600 dark:text-slate-300">
               Nenhuma reserva encontrada
             </p>
-            <p class="text-xs text-slate-400 mt-1 dark:text-slate-500">
+            <p class="text-xs text-slate-500 mt-1 dark:text-slate-500">
               Este produto ainda não tem reservas registadas.
             </p>
           </div>
@@ -93,22 +122,35 @@
           <div class="flex flex-col max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
             {#each reservationsStore.data as r (r.id)}
               <div
-                class="grid grid-cols-12 px-4 py-3 items-center text-slate-750 dark:text-slate-350 hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors"
+                class="grid grid-cols-[1fr_1fr_auto_auto] sm:grid-cols-[1fr_1fr_auto_auto_auto] px-4 py-3 items-center text-slate-750 dark:text-slate-350 hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors gap-x-2"
               >
-                <span class="col-span-5 text-sm font-semibold truncate pr-2" title={r.name}>
-                  {r.name}
+                <span class="text-sm font-semibold truncate pr-2" title={r.user?.name || ""}>
+                  {r.user?.name || ""}
                 </span>
-                <span class="col-span-3 text-center text-sm font-semibold">
+                <span class="text-center text-sm truncate">
+                  {r.variant?.color ?? "—"}{r.variant?.size ? ` / ${r.variant.size}` : ""}
+                </span>
+                <span class="text-center text-sm font-semibold w-12">
                   {r.quantity}
                 </span>
-                <span class="col-span-2 text-center text-xs text-slate-455 dark:text-slate-500">
+                <div class="text-right flex justify-end gap-1 w-12">
+                  {#if r.status === 1}
+                    <Button variant="ghost" size="icon" onclick={() => handleReset(r.id)} class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Reverter para pendente">
+                      <RotateCcw class="size-4" />
+                    </Button>
+                  {:else if r.status === 2}
+                    <Button variant="ghost" size="icon" onclick={() => handleRestore(r.id)} class="size-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Restaurar reserva">
+                      <RotateCcw class="size-4" />
+                    </Button>
+                  {:else}
+                    <Button variant="ghost" size="icon" onclick={() => handleDelete(r.id)} class="text-red-500 hover:text-red-700 hover:bg-red-50/50 dark:hover:bg-red-950/20 size-8">
+                      <Trash2 class="size-4" />
+                    </Button>
+                  {/if}
+                </div>
+                <span class="hidden sm:inline text-center text-xs text-slate-455 dark:text-slate-500 w-16">
                   {formatDate(r.createdAt)}
                 </span>
-                <div class="col-span-2 text-right flex justify-end">
-                  <Button variant="ghost" size="icon" disabled={isDeletingId === r.id} onclick={() => handleDelete(r.id)} class="text-red-500 hover:text-red-700 hover:bg-red-50/50 dark:hover:bg-red-950/20 size-8">
-                    <Trash2 class="size-4" />
-                  </Button>
-                </div>
               </div>
             {/each}
           </div>
@@ -117,14 +159,22 @@
     </div>
 
     <!-- Note -->
-    <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400/95 dark:text-slate-500">
+    <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-500/95 dark:text-slate-500">
       <Info class="size-4 shrink-0 text-slate-450/80 dark:text-slate-650" />
-      <span>As reservas são válidas por 48 horas.</span>
+      <span>As reservas são válidas por 8 dias úteis.</span>
     </div>
   </div>
 
+  <ConfirmDeleteModal
+    open={deletingReservation !== null}
+    onClose={() => deletingReservation = null}
+    onConfirm={handleDeleteConfirm}
+    title="Eliminar Reserva"
+    itemName={deletingReservation ? `${deletingReservation.quantity}x ${deletingReservation.name}` : ""}
+  />
+
   <!-- Footer Buttons -->
-  <div class="absolute bottom-0 left-0 right-0 border-t border-slate-100 bg-white p-3.5 flex items-center gap-3 dark:border-slate-800 dark:bg-slate-900 animate-in fade-in slide-in-from-bottom-2 duration-300">
+  <div class="absolute bottom-0 left-0 right-0 border-t-2 border-slate-200 bg-slate-50 px-6 py-3 flex items-center gap-3 dark:border-slate-700 dark:bg-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-300">
     <Button variant="outline" onclick={onClose} class="h-11 px-5">
       <ChevronLeft class="size-4" />
       <span>Voltar</span>

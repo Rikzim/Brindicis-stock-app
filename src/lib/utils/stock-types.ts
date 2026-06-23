@@ -58,19 +58,20 @@ export interface StockProductFull {
 
 export interface StockReservationFull {
   id: number
-  name: string
+  userId: number
   productId: number
   quantity: number
   message: string
   status: number
   viewed: number
-  proposal: number
-  order: string | null
+  quoteId: number | null
   variantId: number
   createdAt: string | null
   updatedAt: string | null
   product?: StockProductFull
   variant?: StockVariantFull
+  user?: { id: number; name: string; image_path: string | null }
+  quote?: { id: number; reference: string }
   image?: string | null
   ref?: string
 }

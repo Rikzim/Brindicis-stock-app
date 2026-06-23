@@ -1,5 +1,5 @@
 <script>
-  import { getFamilies, getProducts, createFamily, updateFamily, deleteFamily } from "@/lib/utils/stock-api";
+  import { getFamiliesPaginated, getProducts, createFamily, updateFamily, deleteFamily } from "@/lib/utils/stock-api";
   import { Plus } from "lucide-svelte";
   import { toast } from "svelte-sonner";
   import { createAsyncStore } from "@/lib/state/async-store.svelte";
@@ -15,14 +15,58 @@
   import AdminModal from "@/lib/components/ui/admin-modal.svelte";
   import ConfirmDeleteModal from "@/lib/components/ui/confirm-delete-modal.svelte";
   import DetailGrid from "@/lib/components/ui/detail-grid.svelte";
+  import { getNumberParam, writeSearchParams } from "@/lib/utils/url-sync.svelte";
 
   let { searchQuery = "" } = $props();
 
-  const familiesStore = createAsyncStore(getFamilies);
   const productsStore = createAsyncStore(getProducts);
 
   let crud = createCrudModal();
   let form = $state({ name: "", status: "1" });
+
+  // --- Server-side pagination ---
+  let serverFamilies = $state([]);
+  let serverTotal = $state(0);
+  let serverPage = $state(getNumberParam("page", 1));
+  let serverSize = $state(getNumberParam("size", 25));
+  let serverLoading = $state(false);
+
+  async function doFetch(page, size) {
+    serverLoading = true;
+    try {
+      const result = await getFamiliesPaginated({
+        page,
+        limit: size,
+        search: searchQuery || undefined,
+      });
+      serverFamilies = result.families;
+      serverTotal = result.total;
+      serverPage = page;
+    } catch {
+      serverFamilies = [];
+      serverTotal = 0;
+    } finally {
+      serverLoading = false;
+    }
+  }
+
+  $effect(() => {
+    searchQuery;
+    doFetch(1, serverSize);
+  });
+
+  $effect(() => {
+    writeSearchParams({
+      page: serverPage > 1 ? serverPage : undefined,
+      size: serverSize !== 25 ? serverSize : undefined,
+    });
+  });
+
+  function handlePageChange(page, size) {
+    doFetch(page, size);
+  }
+
+  function refetchFamilies() { doFetch(serverPage, serverSize); }
 
   function handleOpenAdd() { form = { name: "", status: "1" }; crud.openAdd(); }
   function handleOpenEdit(fam) { form = { name: fam.name, status: fam.status.toString() }; crud.openEdit(fam); }
@@ -36,7 +80,7 @@
       } else if (crud.selected) {
         await updateFamily(crud.selected.id, { name: form.name.trim().toUpperCase(), status: parseInt(form.status) });
       }
-      familiesStore.refetch();
+      refetchFamilies();
       toast.success(crud.isAdd ? "Família adicionada com sucesso." : "Família atualizada com sucesso.");
       crud.close();
     } catch {
@@ -48,7 +92,7 @@
     if (!crud.selected) return;
     try {
       await deleteFamily(crud.selected.id);
-      familiesStore.refetch();
+      refetchFamilies();
       toast.success("Família removida com sucesso.");
       crud.close();
     } catch (err) {
@@ -69,12 +113,6 @@
     return counts;
   });
 
-  let filteredFamilies = $derived(
-    searchQuery
-      ? (familiesStore.data || []).filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      : (familiesStore.data || [])
-  );
-
   const columns = [
     { key: "name", header: "Nome da Família", render: (r) => `<span class="font-semibold">${r.name}</span>`, className: "w-1/4" },
     { key: "products", header: "Produtos Associados", className: "w-1/4 text-center", headerClassName: "text-center" },
@@ -91,8 +129,9 @@
     </Button>
   </PageCard>
 
-  <DataTable columns={columns} data={filteredFamilies} isLoading={familiesStore.isLoading && (!familiesStore.data || familiesStore.data.length === 0)}
-    loadingMessage="A carregar famílias..." emptyMessage="Sem famílias disponíveis." rowKey={(r) => r.id}>
+  <DataTable columns={columns} data={serverFamilies} isLoading={serverLoading}
+    loadingMessage="A carregar famílias..." emptyMessage="Sem famílias disponíveis." rowKey={(r) => r.id}
+    totalRows={serverTotal} bind:page={serverPage} bind:size={serverSize} onPageChange={handlePageChange}>
     {#snippet cell(row, col)}
       {#if col.key === "products"}
         <span class="text-center font-medium">{productCountsByFamily[row.name.toUpperCase()] || 0}</span>

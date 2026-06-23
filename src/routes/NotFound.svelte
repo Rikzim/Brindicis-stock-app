@@ -2,7 +2,7 @@
   import { navigateTo } from "@/lib/utils/navigate";
 </script>
 
-<div class="flex h-screen items-center justify-center bg-[#F3F4F6] dark:bg-slate-950">
+<div class="flex h-dvh items-center justify-center bg-[#F3F4F6] dark:bg-slate-950">
   <div class="text-center">
     <h1 class="text-6xl font-bold text-slate-800 dark:text-white">404</h1>
     <p class="mt-2 text-lg text-slate-600 dark:text-slate-400">Página não encontrada</p>

@@ -5,31 +5,43 @@
 
   let {
     products = [],
+    totalRows = 0,
     isLoading = false,
     selectedId = $bindable(null),
+    page = $bindable(1),
+    size = $bindable(32),
+    pageSizeOptions = [16, 32, 64, 128],
+    onPageChange = () => {},
   } = $props();
 
-  let page = $state(1);
-  const ITEMS_PER_PAGE = 32;
+  let totalPages = $derived(Math.max(1, Math.ceil(totalRows / size)));
+  let safePage = $derived(Math.max(1, Math.min(page, totalPages)));
+  let showBar = $derived(totalRows > 0);
 
-  let totalPages = $derived(Math.max(1, Math.ceil(products.length / ITEMS_PER_PAGE)));
-  let safePage = $derived(Math.min(page, totalPages));
-  let start = $derived((safePage - 1) * ITEMS_PER_PAGE);
-  let pageProducts = $derived(products.slice(start, start + ITEMS_PER_PAGE));
+  function goToPage(newPage) {
+    page = newPage;
+    onPageChange(page, size);
+  }
+
+  function changeSize(newSize) {
+    size = newSize;
+    page = 1;
+    onPageChange(page, size);
+  }
 </script>
 
-{#if isLoading}
-  <div class="flex flex-1 items-center justify-center">
-    <Loader2 class="size-8 animate-spin text-slate-400" />
-  </div>
-{:else if products.length === 0}
-  <div class="flex flex-1 flex-col items-center justify-center gap-2 text-slate-400">
-    <p class="text-sm font-medium">Nenhum produto encontrado</p>
-  </div>
-{:else}
-  <div class="flex flex-1 flex-col justify-between overflow-hidden animate-in fade-in duration-300">
-    <div class="grid grid-cols-4 gap-3 p-6 overflow-y-auto">
-      {#each pageProducts as product (product.id)}
+<div class="flex flex-1 flex-col overflow-hidden">
+  {#if isLoading}
+    <div class="flex flex-1 items-center justify-center">
+      <Loader2 class="size-8 animate-spin text-slate-400" />
+    </div>
+  {:else if products.length === 0}
+    <div class="flex flex-1 flex-col items-center justify-center gap-2 text-slate-400">
+      <p class="text-sm font-medium">Nenhum produto encontrado</p>
+    </div>
+  {:else}
+    <div class="flex-1 min-h-0 grid grid-cols-4 auto-rows-min gap-3 p-6 overflow-y-auto animate-in fade-in duration-300">
+      {#each products as product (product.id)}
         {@const colorNames = product.colors?.map((c) => c.name).join(", ") || ""}
         <ProductCard
           name={product.name}
@@ -42,8 +54,22 @@
         />
       {/each}
     </div>
+  {/if}
 
-    <div class="mt-auto flex items-center justify-end border-t-2 border-slate-200 px-6 py-4 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-300">
+  {#if showBar && products.length > 0}
+    <div class="flex shrink-0 items-center justify-between border-t-2 border-slate-200 px-6 py-4 bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
+      <div class="flex items-center gap-2">
+        <select
+          value={size}
+          onchange={(e) => changeSize(Number(e.target.value))}
+          class="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
+        >
+          {#each pageSizeOptions as opt}
+            <option value={opt}>{opt}</option>
+          {/each}
+        </select>
+        <span class="text-xs text-slate-400 dark:text-slate-500">por página · {totalRows} registos</span>
+      </div>
       <div class="flex items-center gap-4">
         <span class="text-sm font-bold text-slate-600 dark:text-slate-300">
           Página {safePage} de {totalPages}
@@ -53,7 +79,7 @@
             variant="outline"
             size="icon"
             disabled={safePage <= 1}
-            onclick={() => page = 1}
+            onclick={() => goToPage(1)}
             class="size-9 border-slate-300 dark:border-slate-600"
           >
             <ChevronsLeft class="size-4" />
@@ -62,7 +88,7 @@
             variant="outline"
             size="icon"
             disabled={safePage <= 1}
-            onclick={() => page = Math.max(1, page - 1)}
+            onclick={() => goToPage(Math.max(1, page - 1))}
             class="size-9 border-slate-300 dark:border-slate-600"
           >
             <ChevronLeft class="size-4" />
@@ -74,7 +100,7 @@
             variant="outline"
             size="icon"
             disabled={safePage >= totalPages}
-            onclick={() => page = Math.min(totalPages, page + 1)}
+            onclick={() => goToPage(Math.min(totalPages, page + 1))}
             class="size-9 border-slate-300 dark:border-slate-600"
           >
             <ChevronRight class="size-4" />
@@ -83,7 +109,7 @@
             variant="outline"
             size="icon"
             disabled={safePage >= totalPages}
-            onclick={() => page = totalPages}
+            onclick={() => goToPage(totalPages)}
             class="size-9 border-slate-300 dark:border-slate-600"
           >
             <ChevronsRight class="size-4" />
@@ -91,5 +117,5 @@
         </div>
       </div>
     </div>
-  </div>
-{/if}
+  {/if}
+</div>
